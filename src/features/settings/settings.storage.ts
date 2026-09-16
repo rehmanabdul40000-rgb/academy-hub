@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: AcademySettings = {
   academyName: "Academy Hub",
   adminDisplayName: "Admin",
   adminUsername: "admin",
-  adminPassword: "",
+  adminPassword: import.meta.env.VITE_DEFAULT_ADMIN_PASSWORD ?? "",
   currencyLabel: "Rs",
   academicSession: "2025-2026",
   contactEmail: "",
