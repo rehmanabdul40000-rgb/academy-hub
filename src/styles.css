@@ -1,0 +1,350 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-login: var(--login);
+  --color-login-card: var(--login-card);
+  --color-login-heading: var(--login-heading);
+  --color-login-label: var(--login-label);
+  --color-login-muted: var(--login-muted);
+  --color-login-placeholder: var(--login-placeholder);
+  --color-login-icon: var(--login-icon);
+  --color-login-border: var(--login-border);
+  --color-login-border-strong: var(--login-border-strong);
+  --color-login-divider: var(--login-divider);
+  --color-login-logo: var(--login-logo);
+  --color-login-input: var(--login-input);
+  --color-login-control: var(--login-control);
+  --color-login-focus: var(--login-focus);
+  --color-login-focus-soft: var(--login-focus-soft);
+  --color-login-accent: var(--login-accent);
+  --color-login-button: var(--login-button);
+  --color-login-button-hover: var(--login-button-hover);
+  --color-login-button-border: var(--login-button-border);
+  --color-login-button-foreground: var(--login-button-foreground);
+  --color-login-spinner: var(--login-spinner);
+  --color-login-error: var(--login-error);
+  --color-login-error-border: var(--login-error-border);
+  --color-login-error-foreground: var(--login-error-foreground);
+  --font-display: "Sora", sans-serif;
+  --font-sans: "Manrope", sans-serif;
+  --shadow-login: var(--shadow-login);
+  --shadow-logo: var(--shadow-logo);
+  --shadow-login-button: var(--shadow-login-button);
+  --shadow-login-button-hover: var(--shadow-login-button-hover);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --login: oklch(0.105 0.025 255);
+  --login-card: oklch(0.175 0.03 253 / 78%);
+  --login-heading: oklch(0.965 0.01 245);
+  --login-label: oklch(0.82 0.018 247);
+  --login-muted: oklch(0.66 0.035 250);
+  --login-placeholder: oklch(0.5 0.035 250);
+  --login-icon: oklch(0.62 0.045 247);
+  --login-border: oklch(0.7 0.055 242 / 16%);
+  --login-border-strong: oklch(0.76 0.1 220 / 24%);
+  --login-divider: oklch(0.68 0.105 220 / 36%);
+  --login-logo: oklch(0.31 0.075 240 / 68%);
+  --login-input: oklch(0.125 0.025 255 / 58%);
+  --login-control: oklch(0.7 0.055 242 / 10%);
+  --login-focus: oklch(0.74 0.125 215);
+  --login-focus-soft: oklch(0.72 0.12 220 / 12%);
+  --login-accent: oklch(0.78 0.12 216);
+  --login-button: oklch(0.63 0.15 235);
+  --login-button-hover: oklch(0.69 0.145 225);
+  --login-button-border: oklch(0.85 0.1 215 / 28%);
+  --login-button-foreground: oklch(0.985 0.004 240);
+  --login-spinner: oklch(0.985 0.004 240);
+  --login-error: oklch(0.35 0.12 25 / 22%);
+  --login-error-border: oklch(0.68 0.18 28 / 32%);
+  --login-error-foreground: oklch(0.82 0.09 25);
+  --shadow-login: 0 36px 90px -36px oklch(0.015 0.02 255 / 88%), inset 0 1px 0 oklch(1 0 0 / 5%);
+  --shadow-logo: 0 14px 36px -12px oklch(0.68 0.14 220 / 38%);
+  --shadow-login-button: 0 16px 34px -16px oklch(0.62 0.18 235 / 64%);
+  --shadow-login-button-hover: 0 20px 42px -15px oklch(0.68 0.16 225 / 72%);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+}
+
+.login-stage {
+  isolation: isolate;
+  background-color: var(--login);
+  background-image:
+    radial-gradient(circle at 50% 42%, oklch(0.38 0.12 226 / 22%), transparent 36%),
+    radial-gradient(circle at 12% 82%, oklch(0.31 0.095 255 / 12%), transparent 30%),
+    radial-gradient(circle at 88% 12%, oklch(0.32 0.095 205 / 8%), transparent 26%),
+    linear-gradient(135deg, oklch(0.12 0.03 255 / 76%), transparent 58%);
+}
+
+.login-stage::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, oklch(0.06 0.018 255 / 42%));
+  content: "";
+  pointer-events: none;
+}
+
+.login-grid {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(oklch(0.75 0.06 225 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.75 0.06 225 / 4%) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at center, black, transparent 72%);
+}
+
+.login-glow {
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.65;
+}
+
+.login-glow-primary {
+  width: min(40rem, 80vw);
+  height: min(27rem, 58vw);
+  background: oklch(0.48 0.17 228 / 22%);
+}
+
+.login-glow-secondary {
+  right: -8rem;
+  bottom: -9rem;
+  width: 26rem;
+  height: 26rem;
+  background: oklch(0.45 0.12 200 / 9%);
+}
+
+.login-card {
+  border-color: oklch(0.78 0.08 220 / 20%);
+  box-shadow:
+    0 36px 90px -36px oklch(0.015 0.02 255 / 92%),
+    0 0 0 1px oklch(0.8 0.08 220 / 4%),
+    inset 0 1px 0 oklch(1 0 0 / 7%);
+  animation: login-enter 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-highlight {
+  background: linear-gradient(90deg, transparent, oklch(0.84 0.1 215 / 44%), transparent);
+}
+
+.login-input {
+  color-scheme: dark;
+  caret-color: var(--login-accent);
+}
+
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--login-heading);
+  -webkit-box-shadow: 0 0 0 1000px oklch(0.125 0.025 255 / 58%) inset;
+  caret-color: var(--login-accent);
+  transition: background-color 99999s ease-out;
+}
+
+.academy-date-input {
+  color-scheme: dark;
+  accent-color: oklch(0.74 0.14 215);
+}
+
+.academy-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(82%) sepia(53%) saturate(1080%) hue-rotate(166deg) brightness(96%);
+  opacity: 0.9;
+}
+
+@media (max-width: 767px) {
+  .responsive-data-table table {
+    min-width: 760px;
+  }
+
+  .responsive-data-table {
+    scrollbar-color: oklch(0.48 0.12 220) oklch(0.16 0.03 255);
+    scrollbar-width: thin;
+  }
+}
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #111827 !important;
+  }
+
+  .responsive-data-table {
+    overflow: visible !important;
+  }
+
+  .responsive-data-table table {
+    min-width: 0 !important;
+  }
+}
+
+@keyframes login-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-height: 680px) {
+  .login-card {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+  .login-card header > div:nth-of-type(2) {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+  .login-card form {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card {
+    animation: none;
+  }
+  .login-button {
+    transition: none;
+  }
+}

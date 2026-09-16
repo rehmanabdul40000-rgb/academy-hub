@@ -1,0 +1,6 @@
+{
+  "name": "Academy Hub",
+  "description": "Premium Academy Student & Fee Management System for tracking student records, courses, payments, and fees.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
