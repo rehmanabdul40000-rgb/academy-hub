@@ -22,6 +22,7 @@ export interface Student {
   name: string;
   gender: StudentGender;
   shift: StudentShift;
+  shiftTime?: string;
   phone?: string;
   course?: string;
   dateJoined?: string;
@@ -43,6 +44,7 @@ export type NewStudentInput = {
   name: string;
   gender?: StudentGender;
   shift?: StudentShift;
+  shiftTime?: string;
   phone?: string;
   course?: string;
   dateJoined?: string;
