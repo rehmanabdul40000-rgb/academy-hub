@@ -288,6 +288,7 @@ export function EditStudentModal({
   onSuccess: () => void;
 }) {
   const [name, setName] = useState("");
+  const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");
   const [phone, setPhone] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
@@ -299,6 +300,7 @@ export function EditStudentModal({
   useEffect(() => {
     if (student) {
       setName(student.name || "");
+      setGender(student.gender || "Unspecified");
       setPhone(student.phone || "");
       setCourse(student.course || "");
       setDateJoined(student.dateJoined || "");
@@ -341,6 +343,7 @@ export function EditStudentModal({
 
     const res = updateStudent(student!.id, {
       name: name.trim(),
+      gender,
       phone: phone.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
@@ -424,6 +427,19 @@ export function EditStudentModal({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-medium text-foreground">Gender *</label>
+              <select
+                required
+                value={gender === "Unspecified" ? "" : gender}
+                onChange={(e) => setGender(e.target.value as "Male" | "Female")}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              >
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
             <div>
               <label className="text-xs font-medium text-foreground">
                 Course / Class <span className="text-muted-foreground">(Optional)</span>

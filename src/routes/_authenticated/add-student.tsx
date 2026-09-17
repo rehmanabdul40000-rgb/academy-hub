@@ -48,7 +48,7 @@ function AddStudentPage() {
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
   const [totalFees, setTotalFees] = useState<string>("");
-  const [amountPaid, setAmountPaid] = useState<string>("0");
+  const [amountPaid, setAmountPaid] = useState<string>("");
   const [notes, setNotes] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -69,7 +69,7 @@ function AddStudentPage() {
     setCourse("");
     setDateJoined("");
     setTotalFees("");
-    setAmountPaid("0");
+    setAmountPaid("");
     setNotes("");
     setErrorMessage("");
   }
@@ -216,9 +216,9 @@ function AddStudentPage() {
               </div>
 
               {/* Gender, Phone & Course Grid */}
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid items-start gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="text-xs font-medium text-foreground">Gender *</label>
+                  <label className="flex h-5 items-center text-xs font-medium text-foreground">Gender *</label>
                   <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
                     <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>
                   </select>
@@ -326,14 +326,14 @@ function AddStudentPage() {
                     >
                       Amount Paid at Enrollment ({currencyLabel})
                     </label>
-                    <span className="text-[11px] text-muted-foreground">Default 0</span>
+                    <span className="text-[11px] text-muted-foreground">Enter manually</span>
                   </div>
                   <input
                     id="input-amount-paid"
                     type="number"
                     min="0"
                     step="any"
-                    placeholder="0"
+                    placeholder="e.g. 5000"
                     value={amountPaid}
                     onChange={(e) => setAmountPaid(e.target.value)}
                     className={`mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-mono text-sm outline-none transition-colors focus:ring-2 ${

@@ -123,6 +123,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   const studentHeaders = [
     "Sr. #",
     "Student ID",
+    "Gender",
     "Student Full Name",
     "Phone / WhatsApp",
     "Course / Class",
@@ -166,6 +167,7 @@ export async function exportAcademyToExcel(students: Student[]) {
     const row = studentsSheet.addRow([
       idx + 1,
       s.id,
+      s.gender || "Unspecified",
       s.name,
       s.phone || "—",
       s.course || "—",
@@ -176,7 +178,6 @@ export async function exportAcademyToExcel(students: Student[]) {
       currentRemaining,
       currentStatus,
       s.notes || "—",
-      s.gender || "Unspecified",
     ]);
 
     row.height = 22;
@@ -201,12 +202,12 @@ export async function exportAcademyToExcel(students: Student[]) {
       }
 
       // Column Alignments & Number formats
-      if (colNumber === 1 || colNumber === 2 || colNumber === 6 || colNumber === 7) {
+      if (colNumber === 1 || colNumber === 2 || colNumber === 3 || colNumber === 7 || colNumber === 8) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-      } else if (colNumber >= 8 && colNumber <= 10) {
+      } else if (colNumber >= 9 && colNumber <= 11) {
         cell.alignment = { vertical: "middle", horizontal: "right" };
         cell.numFmt = "#,##0";
-      } else if (colNumber === 11) {
+      } else if (colNumber === 12) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
         if (currentStatus === "Paid") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCFCE7" } };
@@ -259,6 +260,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   studentsSheet.columns = [
     { width: 8 }, // Sr. #
     { width: 16 }, // Student ID
+    { width: 14 }, // Gender
     { width: 28 }, // Student Name
     { width: 18 }, // Phone / WhatsApp
     { width: 24 }, // Course / Class
@@ -269,7 +271,6 @@ export async function exportAcademyToExcel(students: Student[]) {
     { width: 20 }, // Remaining Balance
     { width: 16 }, // Payment Status
     { width: 34 }, // Remarks / Notes
-    { width: 14 }, // Gender
   ];
 
   // -------------------------------------------------------------
@@ -509,15 +510,147 @@ export async function exportAcademyToExcel(students: Student[]) {
   ];
 
   (["Male", "Female"] as const).forEach((gender) => {
-    const sheet = workbook.addWorksheet(`${gender} Students`);
+    const genderSheet = workbook.addWorksheet(`${gender} Students`, {
+      views: [{ state: "frozen", ySplit: 7, showGridLines: true }],
+    });
     const matching = students.filter((s) => (s.gender || "Unspecified") === gender);
-    sheet.addRow([`${academyName} — ${gender} Students`]);
-    sheet.addRow(["Student ID", "Student Name", "Gender", "Phone", "Course / Class", "Date Joined", `Total Fees (${currencyLabel})`, `Paid (${currencyLabel})`, `Remaining (${currencyLabel})`]);
-    matching.forEach((s) => sheet.addRow([s.id, s.name, gender, s.phone || "—", s.course || "—", s.dateJoined || "—", s.totalFees, s.amountPaid, computeRemaining(s.totalFees, s.amountPaid)]));
-    sheet.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: 9 } };
-    sheet.columns = [{width:18},{width:28},{width:14},{width:20},{width:24},{width:16},{width:18},{width:18},{width:20}];
-  });
+    const genderMetrics = calculateMetrics(matching);
+    const genderCollectionRate =
+      genderMetrics.totalBilledFees > 0
+        ? (genderMetrics.totalFeesCollected / genderMetrics.totalBilledFees) * 100
+        : 0;
 
+    genderSheet.mergeCells("A1:M1");
+    const gr1 = genderSheet.getCell("A1");
+    gr1.value = `${academyName.toUpperCase()} — ${gender.toUpperCase()} STUDENTS`;
+    gr1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    gr1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
+    gr1.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(1).height = 36;
+
+    genderSheet.mergeCells("A2:M2");
+    const gr2 = genderSheet.getCell("A2");
+    gr2.value = `${gender.toUpperCase()} STUDENT DIRECTORY & FEE COLLECTION`;
+    gr2.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF38BDF8" } };
+    gr2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
+    gr2.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(2).height = 24;
+
+    genderSheet.mergeCells("A3:M3");
+    const gr3 = genderSheet.getCell("A3");
+    gr3.value = `Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Export Generated: ${formattedDateTime}  |  Total ${gender}: ${matching.length}`;
+    gr3.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
+    gr3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+    gr3.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(3).height = 22;
+    genderSheet.getRow(4).height = 10;
+
+    const cards = [
+      ["A5:C5", `Total Billed: ${currencyLabel} ${genderMetrics.totalBilledFees.toLocaleString()}`, "FFE2E8F0", "FF0F172A"],
+      ["D5:F5", `Total Collected: ${currencyLabel} ${genderMetrics.totalFeesCollected.toLocaleString()}`, "FFDCFCE7", "FF15803D"],
+      ["G5:I5", `Total Outstanding: ${currencyLabel} ${genderMetrics.totalOutstandingFees.toLocaleString()}`, "FFFEF3C7", "FFB45309"],
+      ["J5:L5", `Collection Rate: ${genderCollectionRate.toFixed(1)}%`, "FFDBEAFE", "FF1D4ED8"],
+    ];
+    for (const [range, value, fill, fontColor] of cards) {
+      genderSheet.mergeCells(range);
+      const cell = genderSheet.getCell(range.split(":")[0]);
+      cell.value = value;
+      cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: fontColor } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = {
+        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
+      };
+    }
+    genderSheet.getRow(5).height = 26;
+    genderSheet.getRow(6).height = 10;
+
+    const genderHeaders = [
+      "Sr. #", "Student ID", "Gender", "Student Full Name", "Phone / WhatsApp",
+      "Course / Class", "Date Joined", "Saved At", `Total Fees (${currencyLabel})`,
+      `Amount Paid (${currencyLabel})`, `Remaining Balance (${currencyLabel})`,
+      "Payment Status", "Remarks / Notes",
+    ];
+    const genderHeader = genderSheet.getRow(7);
+    genderHeader.values = genderHeaders;
+    genderHeader.height = 28;
+    genderHeader.eachCell((cell) => {
+      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = {
+        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
+        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
+      };
+    });
+    genderSheet.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7, column: 13 } };
+
+    matching.forEach((s, idx) => {
+      const currentStatus = computeStudentStatus(s.totalFees, s.amountPaid);
+      const currentRemaining = computeRemaining(s.totalFees, s.amountPaid);
+      const row = genderSheet.addRow([
+        idx + 1, s.id, s.gender || "Unspecified", s.name, s.phone || "—",
+        s.course || "—", s.dateJoined || "—", getStudentSavedAt(s), s.totalFees,
+        s.amountPaid, currentRemaining, currentStatus, s.notes || "—",
+      ]);
+      row.height = 22;
+      row.eachCell((cell, colNumber) => {
+        cell.font = { name: "Segoe UI", size: 10, color: { argb: "FF0F172A" } };
+        cell.border = {
+          top: { style: "thin", color: { argb: `FF${borderSlate}` } },
+          left: { style: "thin", color: { argb: `FF${borderSlate}` } },
+          bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
+          right: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        };
+        if (idx % 2 === 1) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${lightZebra}` } };
+        }
+        if ([1, 2, 3, 7, 8, 12].includes(colNumber)) {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+        } else if (colNumber >= 9 && colNumber <= 11) {
+          cell.alignment = { vertical: "middle", horizontal: "right" };
+          cell.numFmt = "#,##0";
+        } else {
+          cell.alignment = { vertical: "middle", horizontal: "left" };
+        }
+        if (colNumber === 12) {
+          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: currentStatus === "Paid" ? "FF15803D" : currentStatus === "Partial" ? "FF1D4ED8" : "FFB45309" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: currentStatus === "Paid" ? "FFDCFCE7" : currentStatus === "Partial" ? "FFDBEAFE" : "FFFEF3C7" } };
+        }
+      });
+    });
+
+    const genderFooter = genderSheet.addRow([
+      "TOTAL", `Students: ${matching.length}`, "", "", "", "", "", "",
+      genderMetrics.totalBilledFees, genderMetrics.totalFeesCollected, genderMetrics.totalOutstandingFees, "", "",
+    ]);
+    genderFooter.height = 26;
+    genderFooter.eachCell((cell, colNumber) => {
+      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FF0F172A" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF0F172A" } },
+        bottom: { style: "double", color: { argb: "FF0F172A" } },
+        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
+      };
+      if (colNumber >= 9 && colNumber <= 11) {
+        cell.alignment = { vertical: "middle", horizontal: "right" };
+        cell.numFmt = "#,##0";
+      }
+    });
+
+    genderSheet.columns = [
+      { width: 8 }, { width: 16 }, { width: 14 }, { width: 28 }, { width: 18 },
+      { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 },
+      { width: 20 }, { width: 16 }, { width: 34 },
+    ];
+  });
   // Generate buffer and trigger download
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

@@ -170,6 +170,20 @@ export function addStudent(input: NewStudentInput): {
     timeAdded: timeAddedFormatted,
     createdAt: nowIso,
     updatedAt: nowIso,
+    payments: amountPaid > 0 ? [{
+      id: `PAY-ENROLL-${nowDate.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      studentId: trimmedId,
+      studentName: trimmedName,
+      amount: amountPaid,
+      paymentDate: dateAddedFormatted,
+      paymentTime: timeAddedFormatted,
+      previousPaid: 0,
+      previousRemaining: totalFees,
+      newPaid: amountPaid,
+      newRemaining: remainingFees,
+      recordedBy: getSettings().adminDisplayName || "Admin",
+      note: "Enrollment payment",
+    }] : undefined,
   };
 
   const updatedList = [newRecord, ...all];
