@@ -90,13 +90,12 @@ export default function AddStudentPage() {
               <input id="input-student-name" type="text" required placeholder="e.g. Abdullah Khan" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
             </div>
 
-            {/* All three field labels use the exact same fixed height so every input starts on the same baseline. */}
             <div className="grid items-start gap-4 sm:grid-cols-3">
               <div>
                 <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground">
                   <span>Gender *</span>
                 </label>
-                <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="relative -top-0.5 mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
                   <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>
                 </select>
               </div>
