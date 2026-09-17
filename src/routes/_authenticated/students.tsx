@@ -29,7 +29,7 @@ import {
   getStudents,
 } from "@/features/students/students.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
-import type { PaymentStatus, Student } from "@/types/student";
+import type { PaymentStatus, Student, StudentGender } from "@/types/student";
 
 export const Route = createFileRoute("/_authenticated/students")({
   head: () => ({
@@ -49,6 +49,7 @@ function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");
+  const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");
   const [isExporting, setIsExporting] = useState(false);
 
   // Dialog states
@@ -80,7 +81,8 @@ function StudentsPage() {
     return students.filter((s) => {
       const matchesFilter =
         statusFilter === "All" || s.status.toLowerCase() === statusFilter.toLowerCase();
-      if (!matchesFilter) return false;
+      const matchesGender = genderFilter === "All" || (s.gender || "Unspecified") === genderFilter;
+      if (!matchesFilter || !matchesGender) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -92,7 +94,7 @@ function StudentsPage() {
         (s.notes && s.notes.toLowerCase().includes(q))
       );
     });
-  }, [students, statusFilter, searchQuery]);
+  }, [students, statusFilter, genderFilter, searchQuery]);
 
   async function handleExport() {
     try {
@@ -189,6 +191,12 @@ function StudentsPage() {
               })}
             </div>
 
+            <div className="flex rounded-lg border border-border bg-background/60 p-0.5">
+              {(["All", "Male", "Female"] as const).map((filter) => (
+                <button key={filter} onClick={() => setGenderFilter(filter)} className={`rounded-md px-3 py-1.5 text-xs ${genderFilter === filter ? "bg-card text-cyan-400 font-semibold" : "text-muted-foreground"}`}>{filter === "All" ? "All Gender" : filter}</button>
+              ))}
+            </div>
+
             {/* Export Excel */}
             <Button
               variant="outline"
@@ -233,6 +241,7 @@ function StudentsPage() {
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <th className="px-5 py-3.5">Student ID</th>
                   <th className="px-5 py-3.5">Student Name</th>
+                  <th className="px-5 py-3.5">Gender</th>
                   <th className="px-5 py-3.5">Phone / WhatsApp</th>
                   <th className="px-5 py-3.5">Course / Class</th>
                   <th className="px-5 py-3.5">Date Joined</th>
@@ -271,6 +280,9 @@ function StudentsPage() {
                         </div>
                       </div>
                     </td>
+
+                    {/* Gender */}
+                    <td className="whitespace-nowrap px-5 py-4 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.gender || "Unspecified"}</span></td>
 
                     {/* Phone */}
                     <td className="whitespace-nowrap px-5 py-4 text-xs">
@@ -424,13 +436,14 @@ function StudentsPage() {
                 : "No students match the current filter and search query."}
             </p>
             <div className="mt-5 flex justify-center gap-2">
-              {(searchQuery || statusFilter !== "All") && (
+              {(searchQuery || statusFilter !== "All" || genderFilter !== "All") && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     setSearchQuery("");
                     setStatusFilter("All");
+                    setGenderFilter("All");
                   }}
                 >
                   Reset Filters

@@ -43,6 +43,7 @@ function AddStudentPage() {
 
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
+  const [gender, setGender] = useState<"" | "Male" | "Female">("");
   const [phone, setPhone] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
@@ -63,6 +64,7 @@ function AddStudentPage() {
   function resetForm() {
     setStudentId("");
     setName("");
+    setGender("");
     setPhone("");
     setCourse("");
     setDateJoined("");
@@ -84,6 +86,7 @@ function AddStudentPage() {
       setErrorMessage("Student Full Name is required.");
       return;
     }
+    if (!gender) { setErrorMessage("Please select Student Gender."); return; }
     if (totalFees.trim() === "" || isNaN(numTotal) || numTotal < 0) {
       setErrorMessage("Please enter a valid non-negative Total Fees amount.");
       return;
@@ -103,6 +106,7 @@ function AddStudentPage() {
     const result = addStudent({
       id: studentId.trim(),
       name: name.trim(),
+      gender,
       phone: phone.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
@@ -211,8 +215,14 @@ function AddStudentPage() {
                 />
               </div>
 
-              {/* Optional Phone & Course Grid */}
-              <div className="grid gap-4 sm:grid-cols-2">
+              {/* Gender, Phone & Course Grid */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground">Gender *</label>
+                  <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                    <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>
+                  </select>
+                </div>
                 <div>
                   <label className="flex items-center justify-between text-xs font-medium text-foreground">
                     <span>Phone / WhatsApp</span>

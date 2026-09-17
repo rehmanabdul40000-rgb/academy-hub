@@ -145,6 +145,14 @@ function Dashboard() {
   }, []);
 
   const metrics = useMemo(() => calculateMetrics(students), [students]);
+  const genderSummary = useMemo(() => {
+    const build = (gender: "Male" | "Female" | "Unspecified") => {
+      const matching = students.filter((s) => (s.gender || "Unspecified") === gender);
+      return { students: matching.length, billed: matching.reduce((a,s)=>a+Number(s.totalFees||0),0), collected: matching.reduce((a,s)=>a+Number(s.amountPaid||0),0), outstanding: matching.reduce((a,s)=>a+computeRemaining(Number(s.totalFees||0),Number(s.amountPaid||0)),0) };
+    };
+    return { male: build("Male"), female: build("Female"), unspecified: build("Unspecified") };
+  }, [students]);
+
   const collectionPercentage =
     metrics.totalBilledFees > 0
       ? Math.round((metrics.totalFeesCollected / metrics.totalBilledFees) * 100)
@@ -354,6 +362,20 @@ function Dashboard() {
         </article>
       </section>
 
+      <section className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Gender Overview">
+        {[ ["Male Students", genderSummary.male], ["Female Students", genderSummary.female], ["Unspecified", genderSummary.unspecified] ].map(([label, d]) => (
+          <article key={label as string} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wider text-cyan-400">{label as string}</p>
+            <p className="mt-2 font-display text-2xl font-bold text-foreground">{(d as typeof genderSummary.male).students}</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
+              <span>Billed<br/><b>{formatCurrency((d as typeof genderSummary.male).billed)}</b></span>
+              <span>Collected<br/><b className="text-emerald-400">{formatCurrency((d as typeof genderSummary.male).collected)}</b></span>
+              <span>Outstanding<br/><b className="text-amber-400">{formatCurrency((d as typeof genderSummary.male).outstanding)}</b></span>
+            </div>
+          </article>
+        ))}
+      </section>
+
       <section
         className="mt-6 rounded-xl border border-border bg-card shadow-sm"
         aria-label="Outstanding Fees"
@@ -508,6 +530,7 @@ function Dashboard() {
                   <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <th className="px-5 py-3.5">Student ID</th>
                     <th className="px-5 py-3.5">Student Name</th>
+                    <th className="px-5 py-3.5">Gender</th>
                     <th className="px-5 py-3.5">Phone</th>
                     <th className="px-5 py-3.5">Course / Class</th>
                     <th className="px-5 py-3.5 text-right">Total Fees</th>
@@ -539,6 +562,9 @@ function Dashboard() {
                           <span>{s.name}</span>
                         </div>
                       </td>
+
+                      {/* Gender */}
+                      <td className="whitespace-nowrap px-5 py-3.5 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-0.5">{s.gender || "Unspecified"}</span></td>
 
                       {/* Phone */}
                       <td className="whitespace-nowrap px-5 py-3.5 text-xs text-muted-foreground">

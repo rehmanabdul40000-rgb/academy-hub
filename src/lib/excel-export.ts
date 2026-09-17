@@ -48,7 +48,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   });
 
   // Row 1: Academy Name Header Banner
-  studentsSheet.mergeCells("A1:L1");
+  studentsSheet.mergeCells("A1:M1");
   const r1 = studentsSheet.getCell("A1");
   r1.value = `${academyName.toUpperCase()} — STUDENT DIRECTORY & FEE RECORDS`;
   r1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
@@ -57,7 +57,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   studentsSheet.getRow(1).height = 36;
 
   // Row 2: Report Title
-  studentsSheet.mergeCells("A2:L2");
+  studentsSheet.mergeCells("A2:M2");
   const r2 = studentsSheet.getCell("A2");
   r2.value = "STUDENT ENROLLMENT & FEE COLLECTION DIRECTORY";
   r2.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF38BDF8" } };
@@ -66,7 +66,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   studentsSheet.getRow(2).height = 24;
 
   // Row 3: Meta Info
-  studentsSheet.mergeCells("A3:L3");
+  studentsSheet.mergeCells("A3:M3");
   const r3 = studentsSheet.getCell("A3");
   r3.value = `Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Export Generated: ${formattedDateTime}  |  Total Enrolled: ${students.length}`;
   r3.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
@@ -133,6 +133,7 @@ export async function exportAcademyToExcel(students: Student[]) {
     `Remaining Balance (${currencyLabel})`,
     "Payment Status",
     "Remarks / Notes",
+    "Gender",
   ];
 
   const headerRow = studentsSheet.getRow(7);
@@ -153,7 +154,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   // Enable autoFilter on header row
   studentsSheet.autoFilter = {
     from: { row: 7, column: 1 },
-    to: { row: 7, column: 12 },
+    to: { row: 7, column: 13 },
   };
 
   // Data Rows (Row 8 onwards)
@@ -175,6 +176,7 @@ export async function exportAcademyToExcel(students: Student[]) {
       currentRemaining,
       currentStatus,
       s.notes || "—",
+      s.gender || "Unspecified",
     ]);
 
     row.height = 22;
@@ -267,6 +269,7 @@ export async function exportAcademyToExcel(students: Student[]) {
     { width: 20 }, // Remaining Balance
     { width: 16 }, // Payment Status
     { width: 34 }, // Remarks / Notes
+    { width: 14 }, // Gender
   ];
 
   // -------------------------------------------------------------
@@ -504,6 +507,16 @@ export async function exportAcademyToExcel(students: Student[]) {
     { width: 14 },
     { width: 22 },
   ];
+
+  (["Male", "Female"] as const).forEach((gender) => {
+    const sheet = workbook.addWorksheet(`${gender} Students`);
+    const matching = students.filter((s) => (s.gender || "Unspecified") === gender);
+    sheet.addRow([`${academyName} — ${gender} Students`]);
+    sheet.addRow(["Student ID", "Student Name", "Gender", "Phone", "Course / Class", "Date Joined", `Total Fees (${currencyLabel})`, `Paid (${currencyLabel})`, `Remaining (${currencyLabel})`]);
+    matching.forEach((s) => sheet.addRow([s.id, s.name, gender, s.phone || "—", s.course || "—", s.dateJoined || "—", s.totalFees, s.amountPaid, computeRemaining(s.totalFees, s.amountPaid)]));
+    sheet.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: 9 } };
+    sheet.columns = [{width:18},{width:28},{width:14},{width:20},{width:24},{width:16},{width:18},{width:18},{width:20}];
+  });
 
   // Generate buffer and trigger download
   const buffer = await workbook.xlsx.writeBuffer();

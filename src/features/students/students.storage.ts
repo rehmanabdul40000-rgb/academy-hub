@@ -64,7 +64,7 @@ export function getStudents(): Student[] {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed;
+      return parsed.map((student) => ({ ...student, gender: student.gender === "Male" || student.gender === "Female" ? student.gender : "Unspecified" }));
     }
     return [];
   } catch (err) {
@@ -156,6 +156,7 @@ export function addStudent(input: NewStudentInput): {
   const newRecord: Student = {
     id: trimmedId,
     name: trimmedName,
+    gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",
     phone: trimmedPhone || undefined,
     course: (input.course || "").trim() || undefined,
     dateJoined: (input.dateJoined || "").trim() || undefined,
@@ -224,6 +225,7 @@ export function updateStudent(
     ...existing,
     id: (updates.id || "").trim() || existing.id,
     name: updates.name !== undefined ? updates.name.trim() : existing.name,
+    gender: updates.gender === "Male" || updates.gender === "Female" || updates.gender === "Unspecified" ? updates.gender : existing.gender || "Unspecified",
     phone: updates.phone !== undefined ? updates.phone.trim() || undefined : existing.phone,
     course: updates.course !== undefined ? updates.course.trim() || undefined : existing.course,
     dateJoined:

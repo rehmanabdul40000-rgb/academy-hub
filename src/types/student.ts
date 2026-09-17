@@ -1,4 +1,5 @@
 export type PaymentStatus = "Paid" | "Partial" | "Pending";
+export type StudentGender = "Male" | "Female" | "Unspecified";
 
 export interface PaymentRecord {
   id: string;
@@ -18,6 +19,7 @@ export interface PaymentRecord {
 export interface Student {
   id: string; // Manually entered Student ID (Required, unique)
   name: string; // Student Full Name (Required)
+  gender: StudentGender;
   phone?: string; // Phone / WhatsApp (Optional)
   course?: string; // Course / Class (Optional)
   dateJoined?: string; // Date Joined (Optional, YYYY-MM-DD)
@@ -37,6 +39,7 @@ export interface Student {
 export type NewStudentInput = {
   id: string;
   name: string;
+  gender?: StudentGender;
   phone?: string;
   course?: string;
   dateJoined?: string;
