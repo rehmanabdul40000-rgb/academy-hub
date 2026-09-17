@@ -1,5 +1,4 @@
 import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import { getSettings } from "@/features/settings/settings.storage";
 import { calculateMetrics, computeRemaining, computeStudentStatus, getPaymentHistory, getStudentSavedAt } from "@/features/students/students.storage";
 import type { Student } from "@/types/student";
@@ -128,7 +127,21 @@ function addDirectorySheet(workbook: ExcelJS.Workbook, name: string, students: S
   return sheet;
 }
 
+function triggerBrowserDownload(data: Blob, filename: string) {
+  if (typeof window === "undefined") return;
+  const url = window.URL.createObjectURL(data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+}
+
 export async function exportAcademyToExcel(students: Student[]) {
+  if (typeof window === "undefined") return;
   const settings = getSettings();
   const academyName = settings.academyName?.trim() || "Academy Hub";
   const currencyLabel = settings.currencyLabel || "Rs";
@@ -145,7 +158,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   addDirectorySheet(workbook, "Male Students", students.filter((s) => s.gender === "Male"), "MALE STUDENTS", academyName, currencyLabel, session, admin);
   addDirectorySheet(workbook, "Female Students", students.filter((s) => s.gender === "Female"), "FEMALE STUDENTS", academyName, currencyLabel, session, admin);
 
-  const payments = workbook.addWorksheet("Payment History", { views: [{ state: "frozen", ySplit: 3, showGridLines: true }] });
+  const payments = workbook.addWorksheet("Payment History", { views: [{ state: "frozen", ySplit: 4, showGridLines: true }] });
   styleTitle(payments, `${academyName.toUpperCase()} - PAYMENT HISTORY`, 11);
   styleSubtitle(payments, "ALL RECORDED FEE PAYMENTS", 11);
   styleMeta(payments, `Institution: ${academyName}  |  Admin: ${admin}  |  Session: ${session}`, 11);
@@ -178,7 +191,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   ];
   summaryRows.forEach((values, index) => {
     const row = summary.addRow(values);
-    if (index === 0) styleHeader(row); else styleDataRow(row, index % 2 === 0, index >= 2 && index <= 4 ? [2] : [2]);
+    if (index === 0) styleHeader(row); else styleDataRow(row, index % 2 === 0, [2]);
   });
   summary.columns = [{ width: 28 }, { width: 20 }, { width: 20 }, { width: 32 }];
 
@@ -203,5 +216,6 @@ export async function exportAcademyToExcel(students: Student[]) {
   const now = new Date().toISOString().split("T")[0];
   const filename = `${academyName.replace(/[^a-zA-Z0-9_-]/g, "_")}_Student_Directory_${now}.xlsx`;
   const buffer = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), filename);
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  triggerBrowserDownload(blob, filename);
 }
