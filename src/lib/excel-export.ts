@@ -1,701 +1,207 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { getSettings } from "@/features/settings/settings.storage";
-import {
-  calculateMetrics,
-  computeRemaining,
-  computeStudentStatus,
-  getPaymentHistory,
-  getStudentSavedAt,
-} from "@/features/students/students.storage";
+import { calculateMetrics, computeRemaining, computeStudentStatus, getPaymentHistory, getStudentSavedAt } from "@/features/students/students.storage";
 import type { Student } from "@/types/student";
+
+const NAVY = "0F172A";
+const SLATE = "1E293B";
+const LIGHT = "F1F5F9";
+const BORDER = "CBD5E1";
+const WHITE = "FFFFFF";
+const CYAN = "38BDF8";
+
+const center = (wrapText = false): Partial<ExcelJS.Alignment> => ({ vertical: "middle", horizontal: "center", wrapText });
+const border = (): ExcelJS.Borders => ({
+  top: { style: "thin", color: { argb: `FF${BORDER}` } },
+  bottom: { style: "thin", color: { argb: `FF${BORDER}` } },
+  left: { style: "thin", color: { argb: `FF${BORDER}` } },
+  right: { style: "thin", color: { argb: `FF${BORDER}` } },
+});
+
+function styleTitle(sheet: ExcelJS.Worksheet, title: string, columns: number) {
+  const end = String.fromCharCode(64 + columns);
+  sheet.mergeCells(`A1:${end}1`);
+  const cell = sheet.getCell("A1");
+  cell.value = title;
+  cell.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: `FF${WHITE}` } };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${NAVY}` } };
+  cell.alignment = center();
+  sheet.getRow(1).height = 36;
+}
+
+function styleSubtitle(sheet: ExcelJS.Worksheet, subtitle: string, columns: number) {
+  const end = String.fromCharCode(64 + columns);
+  sheet.mergeCells(`A2:${end}2`);
+  const cell = sheet.getCell("A2");
+  cell.value = subtitle;
+  cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: `FF${CYAN}` } };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${SLATE}` } };
+  cell.alignment = center();
+  sheet.getRow(2).height = 25;
+}
+
+function styleMeta(sheet: ExcelJS.Worksheet, text: string, columns: number) {
+  const end = String.fromCharCode(64 + columns);
+  sheet.mergeCells(`A3:${end}3`);
+  const cell = sheet.getCell("A3");
+  cell.value = text;
+  cell.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+  cell.alignment = center();
+  sheet.getRow(3).height = 23;
+  sheet.getRow(4).height = 10;
+}
+
+function styleHeader(row: ExcelJS.Row) {
+  row.height = 30;
+  row.eachCell((cell) => {
+    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: `FF${WHITE}` } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${SLATE}` } };
+    cell.alignment = center(true);
+    cell.border = border();
+  });
+}
+
+function styleDataRow(row: ExcelJS.Row, zebra: boolean, numericColumns: number[] = []) {
+  row.height = 24;
+  row.eachCell((cell, col) => {
+    cell.font = { name: "Segoe UI", size: 10, color: { argb: `FF${NAVY}` } };
+    cell.alignment = center(false);
+    cell.border = border();
+    if (zebra) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FFF8FAFC` } };
+    if (numericColumns.includes(col)) cell.numFmt = "#,##0";
+  });
+}
+
+function styleFooter(row: ExcelJS.Row, numericColumns: number[]) {
+  row.height = 28;
+  row.eachCell((cell, col) => {
+    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: `FF${NAVY}` } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+    cell.alignment = center(false);
+    cell.border = border();
+    if (numericColumns.includes(col)) cell.numFmt = "#,##0";
+  });
+}
+
+function addDirectorySheet(workbook: ExcelJS.Workbook, name: string, students: Student[], title: string, academyName: string, currencyLabel: string, session: string, admin: string) {
+  const sheet = workbook.addWorksheet(name, { views: [{ state: "frozen", ySplit: 7, showGridLines: true }] });
+  const columns = 14;
+  styleTitle(sheet, `${academyName.toUpperCase()} - ${title}`, columns);
+  styleSubtitle(sheet, "STUDENT DIRECTORY & FEE COLLECTION", columns);
+  styleMeta(sheet, `Institution: ${academyName}  |  Admin: ${admin}  |  Session: ${session}  |  Total Students: ${students.length}`, columns);
+
+  const metrics = calculateMetrics(students);
+  sheet.mergeCells("A5:C5"); sheet.getCell("A5").value = `Total Billed: ${currencyLabel} ${metrics.totalBilledFees.toLocaleString()}`;
+  sheet.mergeCells("D5:F5"); sheet.getCell("D5").value = `Total Collected: ${currencyLabel} ${metrics.totalFeesCollected.toLocaleString()}`;
+  sheet.mergeCells("G5:I5"); sheet.getCell("G5").value = `Outstanding: ${currencyLabel} ${metrics.totalOutstandingFees.toLocaleString()}`;
+  sheet.mergeCells("J5:N5"); sheet.getCell("J5").value = `Collection Rate: ${metrics.totalBilledFees ? ((metrics.totalFeesCollected / metrics.totalBilledFees) * 100).toFixed(1) : "0.0"}%`;
+  ["A5", "D5", "G5", "J5"].forEach((ref) => { const c = sheet.getCell(ref); c.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: `FF${NAVY}` } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${LIGHT}` } }; c.alignment = center(); c.border = border(); });
+  sheet.getRow(5).height = 28;
+  sheet.getRow(6).height = 10;
+
+  const headers = ["Sr. #", "Student ID", "Gender", "Shift", "Student Full Name", "Phone / WhatsApp", "Course / Class", "Date Joined", "Saved At", `Total Fees (${currencyLabel})`, `Amount Paid (${currencyLabel})`, `Remaining Balance (${currencyLabel})`, "Payment Status", "Remarks / Notes"];
+  const header = sheet.getRow(7); header.values = headers; styleHeader(header);
+  sheet.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7, column: columns } };
+
+  students.forEach((student, index) => {
+    const status = computeStudentStatus(student.totalFees, student.amountPaid);
+    const row = sheet.addRow([
+      index + 1, student.id, student.gender || "Unspecified",
+      student.shift === "Morning" ? "Morning (8 AM–2 PM)" : student.shift === "Evening" ? "Evening" : "Unspecified",
+      student.name, student.phone || "—", student.course || "—", student.dateJoined || "—", getStudentSavedAt(student),
+      student.totalFees, student.amountPaid, computeRemaining(student.totalFees, student.amountPaid), status, student.notes || "—",
+    ]);
+    styleDataRow(row, index % 2 === 1, [10, 11, 12]);
+    const statusCell = row.getCell(13);
+    statusCell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: status === "Paid" ? "FF15803D" : status === "Partial" ? "FF1D4ED8" : "FFB45309" } };
+    statusCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: status === "Paid" ? "FFDCFCE7" : status === "Partial" ? "FFDBEAFE" : "FFFEF3C7" } };
+  });
+
+  const footer = sheet.addRow(["TOTAL", `Students: ${students.length}`, "", "", "", "", "", "", "", metrics.totalBilledFees, metrics.totalFeesCollected, metrics.totalOutstandingFees, "", ""]);
+  styleFooter(footer, [10, 11, 12]);
+  sheet.columns = [
+    { width: 8 }, { width: 16 }, { width: 14 }, { width: 24 }, { width: 28 }, { width: 18 }, { width: 24 },
+    { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 }, { width: 20 }, { width: 16 }, { width: 34 },
+  ];
+  return sheet;
+}
 
 export async function exportAcademyToExcel(students: Student[]) {
   const settings = getSettings();
   const academyName = settings.academyName?.trim() || "Academy Hub";
   const currencyLabel = settings.currencyLabel || "Rs";
-
+  const session = settings.academicSession || "—";
+  const admin = settings.adminDisplayName || "Admin";
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = settings.adminDisplayName || academyName;
+  workbook.creator = admin;
   workbook.created = new Date();
   workbook.modified = new Date();
 
+  addDirectorySheet(workbook, "Students Directory", students, "STUDENT DIRECTORY & FEE RECORDS", academyName, currencyLabel, session, admin);
+  addDirectorySheet(workbook, "Morning Students", students.filter((s) => s.shift === "Morning"), "MORNING SHIFT • 8:00 AM–2:00 PM", academyName, currencyLabel, session, admin);
+  addDirectorySheet(workbook, "Evening Students", students.filter((s) => s.shift === "Evening"), "EVENING SHIFT", academyName, currencyLabel, session, admin);
+  addDirectorySheet(workbook, "Male Students", students.filter((s) => s.gender === "Male"), "MALE STUDENTS", academyName, currencyLabel, session, admin);
+  addDirectorySheet(workbook, "Female Students", students.filter((s) => s.gender === "Female"), "FEMALE STUDENTS", academyName, currencyLabel, session, admin);
+
+  const payments = workbook.addWorksheet("Payment History", { views: [{ state: "frozen", ySplit: 3, showGridLines: true }] });
+  styleTitle(payments, `${academyName.toUpperCase()} - PAYMENT HISTORY`, 11);
+  styleSubtitle(payments, "ALL RECORDED FEE PAYMENTS", 11);
+  styleMeta(payments, `Institution: ${academyName}  |  Admin: ${admin}  |  Session: ${session}`, 11);
+  const paymentHeaders = ["Sr. #", "Payment ID", "Student ID", "Student Name", "Amount", "Payment Date", "Payment Time", "Previous Paid", "New Paid", "Remaining", "Recorded By"];
+  const ph = payments.getRow(4); ph.values = paymentHeaders; styleHeader(ph);
+  const allPayments = students.flatMap((student) => getPaymentHistory(student));
+  allPayments.forEach((payment, index) => {
+    const row = payments.addRow([index + 1, payment.id, payment.studentId, payment.studentName, payment.amount, payment.paymentDate, payment.paymentTime, payment.previousPaid, payment.newPaid, payment.newRemaining, payment.recordedBy]);
+    styleDataRow(row, index % 2 === 1, [5, 8, 9, 10]);
+  });
+  const paymentTotal = allPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const pf = payments.addRow(["TOTAL", `Payments: ${allPayments.length}`, "", "", paymentTotal, "", "", "", "", "", ""]); styleFooter(pf, [5]);
+  payments.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: 11 } };
+  payments.columns = [{ width: 8 }, { width: 25 }, { width: 16 }, { width: 28 }, { width: 18 }, { width: 16 }, { width: 14 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 20 }];
+
+  const summary = workbook.addWorksheet("Fee Summary", { views: [{ showGridLines: true }] });
+  styleTitle(summary, `${academyName.toUpperCase()} - EXECUTIVE FEE SUMMARY`, 4);
+  styleSubtitle(summary, "ACADEMY-WIDE FINANCIAL OVERVIEW", 4);
+  styleMeta(summary, `Institution: ${academyName}  |  Admin: ${admin}  |  Session: ${session}`, 4);
   const metrics = calculateMetrics(students);
-  const nowDate = new Date();
-  const dateString = nowDate.toISOString().split("T")[0];
-  const formattedDateTime = nowDate.toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const navyDark = "1E293B";
-  const navyAccent = "0F172A";
-  const lightZebra = "F8FAFC";
-  const borderSlate = "CBD5E1";
-
-  const collectionRate =
-    metrics.totalBilledFees > 0 ? (metrics.totalFeesCollected / metrics.totalBilledFees) * 100 : 0;
-
-  // -------------------------------------------------------------
-  // 1. STUDENTS DIRECTORY SHEET
-  // -------------------------------------------------------------
-  const studentsSheet = workbook.addWorksheet("Students Directory", {
-    views: [{ state: "frozen", ySplit: 7, showGridLines: true }],
-  });
-
-  // Row 1: Academy Name Header Banner
-  studentsSheet.mergeCells("A1:M1");
-  const r1 = studentsSheet.getCell("A1");
-  r1.value = `${academyName.toUpperCase()} - STUDENT DIRECTORY & FEE RECORDS`;
-  r1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
-  r1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
-  r1.alignment = { vertical: "middle", horizontal: "center" };
-  studentsSheet.getRow(1).height = 36;
-
-  // Row 2: Report Title
-  studentsSheet.mergeCells("A2:M2");
-  const r2 = studentsSheet.getCell("A2");
-  r2.value = "STUDENT ENROLLMENT & FEE COLLECTION DIRECTORY";
-  r2.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF38BDF8" } };
-  r2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-  r2.alignment = { vertical: "middle", horizontal: "center" };
-  studentsSheet.getRow(2).height = 24;
-
-  // Row 3: Meta Info
-  studentsSheet.mergeCells("A3:M3");
-  const r3 = studentsSheet.getCell("A3");
-  r3.value = `Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Export Generated: ${formattedDateTime}  |  Total Enrolled: ${students.length}`;
-  r3.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
-  r3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-  r3.alignment = { vertical: "middle", horizontal: "center" };
-  studentsSheet.getRow(3).height = 22;
-
-  // Row 4: Blank Separator Row
-  studentsSheet.getRow(4).height = 10;
-
-  // Row 5: Financial KPI Summary Cards
-  studentsSheet.mergeCells("A5:C5");
-  const kpi1 = studentsSheet.getCell("A5");
-  kpi1.value = `Total Billed: ${currencyLabel} ${metrics.totalBilledFees.toLocaleString()}`;
-  kpi1.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF0F172A" } };
-  kpi1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
-  kpi1.alignment = { vertical: "middle", horizontal: "center" };
-
-  studentsSheet.mergeCells("D5:F5");
-  const kpi2 = studentsSheet.getCell("D5");
-  kpi2.value = `Total Collected: ${currencyLabel} ${metrics.totalFeesCollected.toLocaleString()}`;
-  kpi2.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF15803D" } };
-  kpi2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCFCE7" } };
-  kpi2.alignment = { vertical: "middle", horizontal: "center" };
-
-  studentsSheet.mergeCells("G5:I5");
-  const kpi3 = studentsSheet.getCell("G5");
-  kpi3.value = `Total Outstanding: ${currencyLabel} ${metrics.totalOutstandingFees.toLocaleString()}`;
-  kpi3.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFB45309" } };
-  kpi3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF3C7" } };
-  kpi3.alignment = { vertical: "middle", horizontal: "center" };
-
-  studentsSheet.mergeCells("J5:L5");
-  const kpi4 = studentsSheet.getCell("J5");
-  kpi4.value = `Collection Rate: ${collectionRate.toFixed(1)}%`;
-  kpi4.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1D4ED8" } };
-  kpi4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDBEAFE" } };
-  kpi4.alignment = { vertical: "middle", horizontal: "center" };
-
-  [kpi1, kpi2, kpi3, kpi4].forEach((cell) => {
-    cell.border = {
-      top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-    };
-  });
-  studentsSheet.getRow(5).height = 26;
-
-  // Row 6: Blank Separator Row
-  studentsSheet.getRow(6).height = 10;
-
-  // Row 7: Table Headers
-  const studentHeaders = [
-    "Sr. #",
-    "Student ID",
-    "Gender",
-    "Student Full Name",
-    "Phone / WhatsApp",
-    "Course / Class",
-    "Date Joined",
-    "Saved At",
-    `Total Fees (${currencyLabel})`,
-    `Amount Paid (${currencyLabel})`,
-    `Remaining Balance (${currencyLabel})`,
-    "Payment Status",
-    "Remarks / Notes",
-  ];
-
-  const headerRow = studentsSheet.getRow(7);
-  headerRow.values = studentHeaders;
-  headerRow.height = 28;
-  headerRow.eachCell((cell) => {
-    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    cell.border = {
-      top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
-      right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-    };
-  });
-
-  // Enable autoFilter on header row
-  studentsSheet.autoFilter = {
-    from: { row: 7, column: 1 },
-    to: { row: 7, column: 13 },
-  };
-
-  // Data Rows (Row 8 onwards)
-  students.forEach((s, idx) => {
-    const savedTimeDisplay = getStudentSavedAt(s);
-    const currentStatus = computeStudentStatus(s.totalFees, s.amountPaid);
-    const currentRemaining = computeRemaining(s.totalFees, s.amountPaid);
-
-    const row = studentsSheet.addRow([
-      idx + 1,
-      s.id,
-      s.gender || "Unspecified",
-      s.name,
-      s.phone || "—",
-      s.course || "—",
-      s.dateJoined || "—",
-      savedTimeDisplay,
-      s.totalFees,
-      s.amountPaid,
-      currentRemaining,
-      currentStatus,
-      s.notes || "—",
-    ]);
-
-    row.height = 22;
-    const isEven = idx % 2 === 0;
-
-    row.eachCell((cell, colNumber) => {
-      cell.font = { name: "Segoe UI", size: 10, color: { argb: "FF0F172A" } };
-      cell.border = {
-        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-
-      // Zebra striping
-      if (!isEven) {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: `FF${lightZebra}` },
-        };
-      }
-
-      // Column Alignments & Number formats
-      if (colNumber === 1 || colNumber === 2 || colNumber === 3 || colNumber === 7 || colNumber === 8) {
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-      } else if (colNumber >= 9 && colNumber <= 11) {
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.numFmt = "#,##0";
-      } else if (colNumber === 12) {
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        if (currentStatus === "Paid") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCFCE7" } };
-          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FF15803D" } };
-        } else if (currentStatus === "Partial") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDBEAFE" } };
-          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FF1D4ED8" } };
-        } else {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF3C7" } };
-          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FFB45309" } };
-        }
-      } else {
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-      }
-    });
-  });
-
-  // Total Summary Footer Row
-  const footerRow = studentsSheet.addRow([
-    "TOTAL",
-    `Students: ${students.length}`,
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    metrics.totalBilledFees,
-    metrics.totalFeesCollected,
-    metrics.totalOutstandingFees,
-    "",
-    "",
-  ]);
-  footerRow.height = 26;
-  footerRow.eachCell((cell, colNumber) => {
-    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FF0F172A" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
-    cell.border = {
-      top: { style: "thin", color: { argb: "FF0F172A" } },
-      bottom: { style: "double", color: { argb: "FF0F172A" } },
-      left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-    };
-    if (colNumber >= 9 && colNumber <= 11) {
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.numFmt = "#,##0";
-    }
-  });
-
-  // Precise Column Widths with generous room to avoid truncation or '###'
-  studentsSheet.columns = [
-    { width: 8 }, // Sr. #
-    { width: 16 }, // Student ID
-    { width: 14 }, // Gender
-    { width: 28 }, // Student Name
-    { width: 18 }, // Phone / WhatsApp
-    { width: 24 }, // Course / Class
-    { width: 15 }, // Date Joined
-    { width: 22 }, // Saved At
-    { width: 18 }, // Total Fees
-    { width: 18 }, // Amount Paid
-    { width: 20 }, // Remaining Balance
-    { width: 16 }, // Payment Status
-    { width: 34 }, // Remarks / Notes
-  ];
-
-  // -------------------------------------------------------------
-  // 2. EXECUTIVE FEE SUMMARY SHEET
-  // -------------------------------------------------------------
-  const summarySheet = workbook.addWorksheet("Fee Summary", {
-    views: [{ showGridLines: true }],
-  });
-
-  summarySheet.mergeCells("A1:D1");
-  const sumTitle = summarySheet.getCell("A1");
-  sumTitle.value = `${academyName.toUpperCase()} - EXECUTIVE FEE & REVENUE SUMMARY`;
-  sumTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
-  sumTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
-  sumTitle.alignment = { vertical: "middle", horizontal: "center" };
-  summarySheet.getRow(1).height = 34;
-
-  summarySheet.addRow([]);
-
-  const summaryHeaders = ["Metric / Indicator", "Value", "Unit / Context", "Remarks"];
-  const sumHeaderRow = summarySheet.addRow(summaryHeaders);
-  sumHeaderRow.height = 26;
-  sumHeaderRow.eachCell((cell) => {
-    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    cell.alignment = { vertical: "middle", horizontal: "center" };
-    cell.border = {
-      bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
-    };
-  });
-
   const summaryRows = [
-    ["Total Enrolled Students", metrics.totalStudents, "Students", "Active student records"],
-    ["Fully Paid Students", metrics.paidStudents, "Students", "100% fees cleared"],
-    ["Partial Payment Students", metrics.partialStudents, "Students", "Installments pending"],
-    ["Pending Payment Students", metrics.pendingStudents, "Students", "Zero fees received"],
-    ["Total Fees Billed", metrics.totalBilledFees, `${currencyLabel}`, "Gross expected revenue"],
-    ["Total Fees Collected", metrics.totalFeesCollected, `${currencyLabel}`, "Realized revenue"],
-    [
-      "Total Outstanding Fees",
-      metrics.totalOutstandingFees,
-      `${currencyLabel}`,
-      "Receivables balance",
-    ],
-    ["Fee Collection Rate", `${collectionRate.toFixed(1)}%`, "Percentage", "Realized / Billed"],
+    ["Metric / Indicator", "Value", "Unit / Context", "Remarks"],
+    ["Total Enrolled Students", students.length, "Students", "Current directory"],
+    ["Total Billed Fees", metrics.totalBilledFees, currencyLabel, "All students"],
+    ["Total Fees Collected", metrics.totalFeesCollected, currencyLabel, "All recorded paid amounts"],
+    ["Total Outstanding", metrics.totalOutstandingFees, currencyLabel, "Current remaining balance"],
+    ["Fully Paid Students", metrics.paidStudents, "Students", "Payment status"],
+    ["Partial Students", metrics.partialStudents, "Students", "Payment status"],
+    ["Pending Students", metrics.pendingStudents, "Students", "Payment status"],
   ];
-
-  summaryRows.forEach((r, idx) => {
-    const row = summarySheet.addRow(r);
-    row.height = 24;
-    const isEven = idx % 2 === 0;
-
-    row.eachCell((cell, col) => {
-      cell.font = { name: "Segoe UI", size: 10 };
-      if (!isEven) {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${lightZebra}` } };
-      }
-      cell.border = {
-        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-      if (col === 2) {
-        cell.font = { name: "Segoe UI", size: 10, bold: true };
-        if (typeof cell.value === "number" && idx >= 4 && idx <= 6) {
-          cell.numFmt = "#,##0";
-        }
-      }
-    });
+  summaryRows.forEach((values, index) => {
+    const row = summary.addRow(values);
+    if (index === 0) styleHeader(row); else styleDataRow(row, index % 2 === 0, index >= 2 && index <= 4 ? [2] : [2]);
   });
+  summary.columns = [{ width: 28 }, { width: 20 }, { width: 20 }, { width: 32 }];
 
-  summarySheet.columns = [{ width: 32 }, { width: 22 }, { width: 18 }, { width: 30 }];
-
-  // -------------------------------------------------------------
-  // 3. FEE ANALYTICS SHEET
-  // -------------------------------------------------------------
-  const analyticsSheet = workbook.addWorksheet("Fee Analytics", {
-    views: [{ state: "frozen", ySplit: 3, showGridLines: true }],
-  });
-
-  analyticsSheet.mergeCells("A1:D1");
-  const analyticsTitle = analyticsSheet.getCell("A1");
-  analyticsTitle.value = `${academyName.toUpperCase()} - FEE ANALYTICS`;
-  analyticsTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
-  analyticsTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
-  analyticsTitle.alignment = { vertical: "middle", horizontal: "center" };
-  analyticsSheet.getRow(1).height = 34;
-
-  analyticsSheet.mergeCells("A2:D2");
-  const analyticsMeta = analyticsSheet.getCell("A2");
-  analyticsMeta.value = `Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Generated: ${formattedDateTime}`;
-  analyticsMeta.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
-  analyticsMeta.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-  analyticsMeta.alignment = { vertical: "middle", horizontal: "center" };
-
-  const analyticsHeader = analyticsSheet.addRow([
-    "Payment Status",
-    "Students",
-    "Amount Paid",
-    "Remaining Balance",
-  ]);
-  analyticsHeader.height = 26;
-  analyticsHeader.eachCell((cell) => {
-    cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    cell.border = { bottom: { style: "medium", color: { argb: `FF${navyAccent}` } } };
-  });
-
-  const analyticsRows = (["Paid", "Partial", "Pending"] as const).map((status) => {
-    const matching = students.filter(
-      (student) => computeStudentStatus(student.totalFees, student.amountPaid) === status,
-    );
-    return [
-      status,
-      matching.length,
-      matching.reduce((sum, student) => sum + Number(student.amountPaid || 0), 0),
-      matching.reduce(
-        (sum, student) =>
-          sum + computeRemaining(Number(student.totalFees || 0), Number(student.amountPaid || 0)),
-        0,
-      ),
-    ];
-  });
-
-  analyticsRows.forEach((values, index) => {
-    const row = analyticsSheet.addRow(values);
-    row.height = 24;
-    row.eachCell((cell, column) => {
-      cell.font = { name: "Segoe UI", size: 10 };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: index % 2 ? "FFF8FAFC" : "FFFFFFFF" },
-      };
-      cell.border = {
-        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-      cell.alignment = { vertical: "middle", horizontal: column === 1 ? "left" : "right" };
-      if (column >= 3) cell.numFmt = "#,##0";
-    });
-  });
-
-  analyticsSheet.columns = [{ width: 22 }, { width: 14 }, { width: 20 }, { width: 24 }];
-
-  const paymentSheet = workbook.addWorksheet("Payment History", {
-    views: [{ state: "frozen", ySplit: 3, showGridLines: true }],
-  });
-  paymentSheet.mergeCells("A1:K1");
-  const paymentTitle = paymentSheet.getCell("A1");
-  paymentTitle.value = `${academyName.toUpperCase()} - PAYMENT HISTORY`;
-  paymentTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
-  paymentTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
-  paymentTitle.alignment = { vertical: "middle", horizontal: "center" };
-  paymentSheet.getRow(1).height = 34;
-  paymentSheet.mergeCells("A2:K2");
-  paymentSheet.getCell("A2").value =
-    `Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Generated: ${formattedDateTime}`;
-  paymentSheet.getCell("A2").font = {
-    name: "Segoe UI",
-    size: 9.5,
-    italic: true,
-    color: { argb: "FF475569" },
-  };
-  const paymentHeaders = [
-    "Payment ID",
-    "Student ID",
-    "Student Name",
-    `Amount (${currencyLabel})`,
-    `Previous Paid (${currencyLabel})`,
-    `Previous Remaining (${currencyLabel})`,
-    `New Paid (${currencyLabel})`,
-    `New Remaining (${currencyLabel})`,
-    "Payment Date",
-    "Payment Time",
-    "Recorded By",
+  const analytics = workbook.addWorksheet("Fee Analytics", { views: [{ showGridLines: true }] });
+  styleTitle(analytics, `${academyName.toUpperCase()} - FEE ANALYTICS`, 5);
+  styleSubtitle(analytics, "STATUS, SHIFT & GENDER BREAKDOWN", 5);
+  styleMeta(analytics, `Institution: ${academyName}  |  Admin: ${admin}  |  Session: ${session}`, 5);
+  const ah = analytics.addRow(["Category", "Students", "Billed", "Collected", "Outstanding"]); styleHeader(ah);
+  const groups: Array<[string, Student[]]> = [
+    ["All Students", students], ["Morning Shift (8 AM–2 PM)", students.filter((s) => s.shift === "Morning")], ["Evening Shift", students.filter((s) => s.shift === "Evening")],
+    ["Male Students", students.filter((s) => s.gender === "Male")], ["Female Students", students.filter((s) => s.gender === "Female")],
   ];
-  const paymentHeaderRow = paymentSheet.addRow(paymentHeaders);
-  paymentHeaderRow.eachCell((cell) => {
-    cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-  });
-  paymentSheet.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: 11 } };
-  students
-    .flatMap((student) => getPaymentHistory(student))
-    .forEach((payment, index) => {
-      const row = paymentSheet.addRow([
-        payment.id,
-        payment.studentId,
-        payment.studentName,
-        payment.amount,
-        payment.previousPaid,
-        payment.previousRemaining,
-        payment.newPaid,
-        payment.newRemaining,
-        payment.paymentDate,
-        payment.paymentTime,
-        payment.recordedBy,
-      ]);
-      row.eachCell((cell, column) => {
-        cell.font = { name: "Segoe UI", size: 10, color: { argb: "FF0F172A" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: index % 2 ? "FFF8FAFC" : "FFFFFFFF" },
-        };
-        cell.border = {
-          top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        };
-        cell.alignment = {
-          vertical: "middle",
-          horizontal: column >= 4 && column <= 8 ? "right" : "left",
-        };
-        if (column >= 4 && column <= 8) cell.numFmt = "#,##0";
-      });
-    });
-  paymentSheet.columns = [
-    { width: 28 },
-    { width: 16 },
-    { width: 26 },
-    { width: 18 },
-    { width: 22 },
-    { width: 28 },
-    { width: 18 },
-    { width: 24 },
-    { width: 16 },
-    { width: 14 },
-    { width: 22 },
-  ];
-
-  (["Male", "Female"] as const).forEach((gender) => {
-    const genderSheet = workbook.addWorksheet(`${gender} Students`, {
-      views: [{ state: "frozen", ySplit: 7, showGridLines: true }],
-    });
-    const matching = students.filter((s) => (s.gender || "Unspecified") === gender);
-    const genderMetrics = calculateMetrics(matching);
-    const genderCollectionRate =
-      genderMetrics.totalBilledFees > 0
-        ? (genderMetrics.totalFeesCollected / genderMetrics.totalBilledFees) * 100
-        : 0;
-
-    genderSheet.mergeCells("A1:M1");
-    const gr1 = genderSheet.getCell("A1");
-    gr1.value = `${academyName.toUpperCase()} - ${gender.toUpperCase()} STUDENTS`;
-    gr1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
-    gr1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
-    gr1.alignment = { vertical: "middle", horizontal: "center" };
-    genderSheet.getRow(1).height = 36;
-
-    genderSheet.mergeCells("A2:M2");
-    const gr2 = genderSheet.getCell("A2");
-    gr2.value = `${gender.toUpperCase()} STUDENT DIRECTORY & FEE COLLECTION`;
-    gr2.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF38BDF8" } };
-    gr2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    gr2.alignment = { vertical: "middle", horizontal: "center" };
-    genderSheet.getRow(2).height = 24;
-
-    genderSheet.mergeCells("A3:M3");
-    const gr3 = genderSheet.getCell("A3");
-    gr3.value = `Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Export Generated: ${formattedDateTime}  |  Total ${gender}: ${matching.length}`;
-    gr3.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
-    gr3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-    gr3.alignment = { vertical: "middle", horizontal: "center" };
-    genderSheet.getRow(3).height = 22;
-    genderSheet.getRow(4).height = 10;
-
-    const cards = [
-      ["A5:C5", `Total Billed: ${currencyLabel} ${genderMetrics.totalBilledFees.toLocaleString()}`, "FFE2E8F0", "FF0F172A"],
-      ["D5:F5", `Total Collected: ${currencyLabel} ${genderMetrics.totalFeesCollected.toLocaleString()}`, "FFDCFCE7", "FF15803D"],
-      ["G5:I5", `Total Outstanding: ${currencyLabel} ${genderMetrics.totalOutstandingFees.toLocaleString()}`, "FFFEF3C7", "FFB45309"],
-      ["J5:L5", `Collection Rate: ${genderCollectionRate.toFixed(1)}%`, "FFDBEAFE", "FF1D4ED8"],
-    ];
-    for (const [range, value, fill, fontColor] of cards) {
-      genderSheet.mergeCells(range);
-      const cell = genderSheet.getCell(range.split(":")[0]);
-      cell.value = value;
-      cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: fontColor } };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.border = {
-        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-    }
-    genderSheet.getRow(5).height = 26;
-    genderSheet.getRow(6).height = 10;
-
-    const genderHeaders = [
-      "Sr. #", "Student ID", "Gender", "Student Full Name", "Phone / WhatsApp",
-      "Course / Class", "Date Joined", "Saved At", `Total Fees (${currencyLabel})`,
-      `Amount Paid (${currencyLabel})`, `Remaining Balance (${currencyLabel})`,
-      "Payment Status", "Remarks / Notes",
-    ];
-    const genderHeader = genderSheet.getRow(7);
-    genderHeader.values = genderHeaders;
-    genderHeader.height = 28;
-    genderHeader.eachCell((cell) => {
-      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-      cell.border = {
-        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-    });
-    genderSheet.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7, column: 13 } };
-
-    matching.forEach((s, idx) => {
-      const currentStatus = computeStudentStatus(s.totalFees, s.amountPaid);
-      const currentRemaining = computeRemaining(s.totalFees, s.amountPaid);
-      const row = genderSheet.addRow([
-        idx + 1, s.id, s.gender || "Unspecified", s.name, s.phone || "—",
-        s.course || "—", s.dateJoined || "—", getStudentSavedAt(s), s.totalFees,
-        s.amountPaid, currentRemaining, currentStatus, s.notes || "—",
-      ]);
-      row.height = 22;
-      row.eachCell((cell, colNumber) => {
-        cell.font = { name: "Segoe UI", size: 10, color: { argb: "FF0F172A" } };
-        cell.border = {
-          top: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          bottom: { style: "thin", color: { argb: `FF${borderSlate}` } },
-          right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        };
-        if (idx % 2 === 1) {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${lightZebra}` } };
-        }
-        if ([1, 2, 3, 7, 8, 12].includes(colNumber)) {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-        } else if (colNumber >= 9 && colNumber <= 11) {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.numFmt = "#,##0";
-        } else {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-        }
-        if (colNumber === 12) {
-          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: currentStatus === "Paid" ? "FF15803D" : currentStatus === "Partial" ? "FF1D4ED8" : "FFB45309" } };
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: currentStatus === "Paid" ? "FFDCFCE7" : currentStatus === "Partial" ? "FFDBEAFE" : "FFFEF3C7" } };
-        }
-      });
-    });
-
-    const genderFooter = genderSheet.addRow([
-      "TOTAL", `Students: ${matching.length}`, "", "", "", "", "", "",
-      genderMetrics.totalBilledFees, genderMetrics.totalFeesCollected, genderMetrics.totalOutstandingFees, "", "",
-    ]);
-    genderFooter.height = 26;
-    genderFooter.eachCell((cell, colNumber) => {
-      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FF0F172A" } };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
-      cell.border = {
-        top: { style: "thin", color: { argb: "FF0F172A" } },
-        bottom: { style: "double", color: { argb: "FF0F172A" } },
-        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
-        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
-      };
-      if (colNumber >= 9 && colNumber <= 11) {
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.numFmt = "#,##0";
-      }
-    });
-
-    genderSheet.columns = [
-      { width: 8 }, { width: 16 }, { width: 14 }, { width: 28 }, { width: 18 },
-      { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 },
-      { width: 20 }, { width: 16 }, { width: 34 },
-    ];
-  });
-  // Final workbook-wide alignment and sheet ordering pass.
-  const headerRowsBySheet: Record<string, Set<number>> = {
-    "Students Directory": new Set([1, 7]),
-    "Male Students": new Set([1, 7]),
-    "Female Students": new Set([1, 7]),
-    "Payment History": new Set([1, 3]),
-    "Fee Analytics": new Set([1, 3]),
-    "Fee Summary": new Set([1, 3]),
-  };
+  groups.forEach(([label, group], index) => { const m = calculateMetrics(group); const row = analytics.addRow([label, m.totalStudents, m.totalBilledFees, m.totalFeesCollected, m.totalOutstandingFees]); styleDataRow(row, index % 2 === 1, [2, 3, 4, 5]); });
+  analytics.columns = [{ width: 30 }, { width: 16 }, { width: 18 }, { width: 18 }, { width: 20 }];
 
   workbook.worksheets.forEach((sheet) => {
-    const headerRows = headerRowsBySheet[sheet.name] || new Set<number>();
-    sheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        const existing = cell.alignment || {};
-        cell.alignment = {
-          ...existing,
-          horizontal: "center",
-          vertical: "middle",
-          ...(headerRows.has(row.number) ? {} : { wrapText: false }),
-        };
-      });
-    });
+    sheet.eachRow((row) => row.eachCell((cell) => {
+      cell.alignment = { ...(cell.alignment || {}), vertical: "middle", horizontal: "center" };
+    }));
   });
 
-  // Export in the requested order: Students Directory, Male, Female, Payment History, Fee Analytics, Fee Summary.
-  const desiredSheetOrder = [
-    "Students Directory",
-    "Male Students",
-    "Female Students",
-    "Payment History",
-    "Fee Analytics",
-    "Fee Summary",
-  ];
-  const orderedSheets = desiredSheetOrder
-    .map((name) => workbook.getWorksheet(name))
-    .filter((sheet): sheet is ExcelJS.Worksheet => Boolean(sheet));
-  (workbook as unknown as { _worksheets: Array<ExcelJS.Worksheet | undefined> })._worksheets = [undefined, ...orderedSheets];
-
-  // Generate buffer and trigger download
+  const now = new Date().toISOString().split("T")[0];
+  const filename = `${academyName.replace(/[^a-zA-Z0-9_-]/g, "_")}_Student_Directory_${now}.xlsx`;
   const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  const sanitizedAcademyName = academyName.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const filename = `${sanitizedAcademyName}_Student_Directory_${dateString}.xlsx`;
-  saveAs(blob, filename);
+  saveAs(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), filename);
 }
