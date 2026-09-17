@@ -63,8 +63,7 @@ function AddStudentPage() {
 
   function handleShiftChange(value: "" | "Morning" | "Evening") {
     setShift(value);
-    if (value) setShiftTime(getCurrentTime());
-    else setShiftTime("");
+    setShiftTime(value ? getCurrentTime() : "");
   }
 
   function resetForm() {
@@ -87,9 +86,6 @@ function AddStudentPage() {
     setSuccessMessage("");
     if (!studentId.trim()) return setErrorMessage("Student ID is required. Please choose and enter a unique Student ID.");
     if (!name.trim()) return setErrorMessage("Student Full Name is required.");
-    if (!gender) return setErrorMessage("Please select Student Gender.");
-    if (!shift) return setErrorMessage("Please select Student Shift.");
-    if (!shiftTime) return setErrorMessage("Please select a class time.");
     if (totalFees.trim() === "" || isNaN(numTotal) || numTotal < 0) return setErrorMessage("Please enter a valid non-negative Total Fees amount.");
     if (numPaid < 0) return setErrorMessage("Amount Paid cannot be negative.");
     if (numPaid > numTotal) return setErrorMessage(`Amount Paid (${formatCurrency(numPaid)}) cannot be greater than Total Fees (${formatCurrency(numTotal)}).`);
@@ -98,9 +94,9 @@ function AddStudentPage() {
     const result = addStudent({
       id: studentId.trim(),
       name: name.trim(),
-      gender,
-      shift,
-      shiftTime,
+      gender: gender || undefined,
+      shift: shift || undefined,
+      shiftTime: shiftTime || undefined,
       phone: phone.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
@@ -137,49 +133,49 @@ function AddStudentPage() {
             <h2 className="font-display text-sm font-semibold tracking-wide text-cyan-400 uppercase">Student Identification</h2>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Student ID *</span><span className="text-[11px] text-muted-foreground">Manual entry</span></label>
+                <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Student ID *</span><span className="text-[11px] text-muted-foreground">Manual entry</span></label>
                 <input id="input-student-id" autoComplete="off" type="text" required placeholder="e.g. STD-2026-01" value={studentId} onChange={(e) => setStudentId(e.target.value)} className={`${inputClass} font-mono`} />
                 <p className="mt-1 text-[11px] text-muted-foreground">Choose a unique Student ID (never auto-generated).</p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground">Student Full Name *</label>
+                <label className="flex h-5 items-center text-xs font-medium text-foreground">Student Full Name *</label>
                 <input id="input-student-name" autoComplete="off" type="text" required placeholder="e.g. Abdullah Khan" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
               </div>
 
               <div className="grid items-start gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="text-xs font-medium text-foreground">Gender *</label>
-                  <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className={inputClass}>
+                <div className="min-w-0">
+                  <label className="flex h-5 items-center text-xs font-medium text-foreground">Gender</label>
+                  <select id="input-student-gender" value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className={inputClass}>
                     <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>
                   </select>
                 </div>
-                <div>
-                  <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Phone / WhatsApp</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
+                <div className="min-w-0">
+                  <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Phone / WhatsApp</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
                   <input id="input-student-phone" autoComplete="off" type="tel" placeholder="e.g. 0300-1234567" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
                 </div>
-                <div>
-                  <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Course / Class</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
+                <div className="min-w-0">
+                  <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Course / Class</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
                   <input id="input-student-course" autoComplete="off" type="text" placeholder="e.g. Mathematics" value={course} onChange={(e) => setCourse(e.target.value)} className={inputClass} />
                 </div>
               </div>
 
               <div className="grid items-start gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Shift *</span><span className="text-[11px] text-muted-foreground">Morning / Evening</span></label>
-                  <select id="input-student-shift" required value={shift} onChange={(e) => handleShiftChange(e.target.value as "" | "Morning" | "Evening")} className={inputClass}>
+                  <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Shift</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
+                  <select id="input-student-shift" value={shift} onChange={(e) => handleShiftChange(e.target.value as "" | "Morning" | "Evening")} className={inputClass}>
                     <option value="">Select shift</option><option value="Morning">Morning Shift</option><option value="Evening">Evening Shift</option>
                   </select>
                 </div>
                 <div>
-                  <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Class Time *</span><span className="text-[11px] text-muted-foreground">Auto • editable</span></label>
-                  <input id="input-student-shift-time" type="time" required value={shiftTime} onChange={(e) => setShiftTime(e.target.value)} className={inputClass} />
-                  <p className="mt-1 text-[11px] text-muted-foreground">Selecting a shift fills the current time automatically. You can edit it if needed.</p>
+                  <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Class Time</span><span className="text-[11px] text-muted-foreground">Auto • editable</span></label>
+                  <input id="input-student-shift-time" type="time" value={shiftTime} onChange={(e) => setShiftTime(e.target.value)} className={inputClass} />
+                  <p className="mt-1 text-[11px] text-muted-foreground">Shift selection fills the current time automatically. You can edit it or leave it blank.</p>
                 </div>
               </div>
 
               <div>
-                <label className="flex items-center justify-between text-xs font-medium text-foreground"><span>Date Joined</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
+                <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Date Joined</span><span className="text-[11px] text-muted-foreground">Optional</span></label>
                 <input id="input-student-date-joined" type="date" value={dateJoined} onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker?.(); } catch {} }} onFocus={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker?.(); } catch {} }} onChange={(e) => setDateJoined(e.target.value)} className={`${inputClass} academy-date-input cursor-pointer`} />
               </div>
             </div>
