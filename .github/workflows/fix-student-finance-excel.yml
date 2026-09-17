@@ -1,0 +1,286 @@
+name: Refine student finance and Excel reporting
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch source files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          def replace(f, old, new, count=1):
+              p=Path(f); s=p.read_text(); assert old in s, f'missing in {f}: {old[:100]!r}'; p.write_text(s.replace(old,new,count))
+
+          # Add Student: amount paid must start empty; 0 remains the calculation fallback only.
+          replace('src/routes/_authenticated/add-student.tsx', 'const [amountPaid, setAmountPaid] = useState<string>("0");', 'const [amountPaid, setAmountPaid] = useState<string>("");')
+          replace('src/routes/_authenticated/add-student.tsx', 'setAmountPaid("0");', 'setAmountPaid("");')
+          replace('src/routes/_authenticated/add-student.tsx', '<span className="text-[11px] text-muted-foreground">Default 0</span>', '<span className="text-[11px] text-muted-foreground">Enter manually</span>')
+          replace('src/routes/_authenticated/add-student.tsx', 'placeholder="0"\n                    value={amountPaid}', 'placeholder="e.g. 5000"\n                    value={amountPaid}')
+          replace('src/routes/_authenticated/add-student.tsx', '<div className="grid gap-4 sm:grid-cols-3">', '<div className="grid items-start gap-4 sm:grid-cols-3">')
+          replace('src/routes/_authenticated/add-student.tsx', '<label className="text-xs font-medium text-foreground">Gender *</label>', '<label className="flex h-5 items-center text-xs font-medium text-foreground">Gender *</label>')
+
+          # Enrollment payment must become the first payment-history record when money is paid during registration.
+          replace('src/features/students/students.storage.ts', '    updatedAt: nowIso,\n  };', '''    updatedAt: nowIso,
+    payments: amountPaid > 0 ? [{
+      id: `PAY-ENROLL-${nowDate.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      studentId: trimmedId,
+      studentName: trimmedName,
+      amount: amountPaid,
+      paymentDate: dateAddedFormatted,
+      paymentTime: timeAddedFormatted,
+      previousPaid: 0,
+      previousRemaining: totalFees,
+      newPaid: amountPaid,
+      newRemaining: remainingFees,
+      recordedBy: getSettings().adminDisplayName || "Admin",
+      note: "Enrollment payment",
+    }] : undefined,
+  };''', 1)
+
+          # Edit Student: allow gender to be corrected later.
+          replace('src/components/academy/student-dialogs.tsx', '  const [name, setName] = useState("");\n  const [phone, setPhone] = useState("");', '  const [name, setName] = useState("");\n  const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");\n  const [phone, setPhone] = useState("");', 1)
+          replace('src/components/academy/student-dialogs.tsx', '      setName(student.name || "");\n      setPhone(student.phone || "");', '      setName(student.name || "");\n      setGender(student.gender || "Unspecified");\n      setPhone(student.phone || "");', 1)
+          replace('src/components/academy/student-dialogs.tsx', '      name: name.trim(),\n      phone: phone.trim() || undefined,', '      name: name.trim(),\n      gender,\n      phone: phone.trim() || undefined,', 1)
+          replace('src/components/academy/student-dialogs.tsx', '''          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-medium text-foreground">
+                Course / Class <span className="text-muted-foreground">(Optional)</span>
+              </label>''', '''          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-medium text-foreground">Gender *</label>
+              <select
+                required
+                value={gender === "Unspecified" ? "" : gender}
+                onChange={(e) => setGender(e.target.value as "Male" | "Female")}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              >
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">
+                Course / Class <span className="text-muted-foreground">(Optional)</span>
+              </label>''', 1)
+
+          # Excel: put Gender immediately after Student ID, not at the far right.
+          replace('src/lib/excel-export.ts', '''  const studentHeaders = [
+    "Sr. #",
+    "Student ID",
+    "Student Full Name",
+    "Phone / WhatsApp",
+    "Course / Class",
+    "Date Joined",
+    "Saved At",
+    `Total Fees (${currencyLabel})`,
+    `Amount Paid (${currencyLabel})`,
+    `Remaining Balance (${currencyLabel})`,
+    "Payment Status",
+    "Remarks / Notes",
+    "Gender",
+  ];''', '''  const studentHeaders = [
+    "Sr. #",
+    "Student ID",
+    "Gender",
+    "Student Full Name",
+    "Phone / WhatsApp",
+    "Course / Class",
+    "Date Joined",
+    "Saved At",
+    `Total Fees (${currencyLabel})`,
+    `Amount Paid (${currencyLabel})`,
+    `Remaining Balance (${currencyLabel})`,
+    "Payment Status",
+    "Remarks / Notes",
+  ];''', 1)
+          replace('src/lib/excel-export.ts', '''      s.id,
+      s.name,
+      s.phone || "—",
+      s.course || "—",
+      s.dateJoined || "—",
+      savedTimeDisplay,
+      s.totalFees,
+      s.amountPaid,
+      currentRemaining,
+      currentStatus,
+      s.notes || "—",
+      s.gender || "Unspecified",
+    ]);''', '''      s.id,
+      s.gender || "Unspecified",
+      s.name,
+      s.phone || "—",
+      s.course || "—",
+      s.dateJoined || "—",
+      savedTimeDisplay,
+      s.totalFees,
+      s.amountPaid,
+      currentRemaining,
+      currentStatus,
+      s.notes || "—",
+    ]);''', 1)
+          replace('src/lib/excel-export.ts', 'to: { row: 7, column: 13 },', 'to: { row: 7, column: 13 },', 1)
+          replace('src/lib/excel-export.ts', 'if (colNumber === 1 || colNumber === 2 || colNumber === 6 || colNumber === 7) {', 'if (colNumber === 1 || colNumber === 2 || colNumber === 3 || colNumber === 7 || colNumber === 8) {', 1)
+          replace('src/lib/excel-export.ts', '      } else if (colNumber >= 8 && colNumber <= 10) {', '      } else if (colNumber >= 9 && colNumber <= 11) {', 1)
+          replace('src/lib/excel-export.ts', '      } else if (colNumber === 11) {', '      } else if (colNumber === 12) {', 1)
+          replace('src/lib/excel-export.ts', '''    "",
+    "",
+  ]);''', '''    "",
+    "",
+    "",
+  ]);''', 1)
+          replace('src/lib/excel-export.ts', 'if (colNumber >= 8 && colNumber <= 10) {', 'if (colNumber >= 9 && colNumber <= 11) {', 1)
+          replace('src/lib/excel-export.ts', '''  studentsSheet.columns = [
+    { width: 8 }, // Sr. #
+    { width: 16 }, // Student ID
+    { width: 28 }, // Student Name
+    { width: 18 }, // Phone / WhatsApp
+    { width: 24 }, // Course / Class
+    { width: 15 }, // Date Joined
+    { width: 22 }, // Saved At
+    { width: 18 }, // Total Fees
+    { width: 18 }, // Amount Paid
+    { width: 20 }, // Remaining Balance
+    { width: 16 }, // Payment Status
+    { width: 34 }, // Remarks / Notes
+    { width: 14 }, // Gender
+  ];''', '''  studentsSheet.columns = [
+    { width: 8 }, // Sr. #
+    { width: 16 }, // Student ID
+    { width: 14 }, // Gender
+    { width: 28 }, // Student Name
+    { width: 18 }, // Phone / WhatsApp
+    { width: 24 }, // Course / Class
+    { width: 15 }, // Date Joined
+    { width: 22 }, // Saved At
+    { width: 18 }, // Total Fees
+    { width: 18 }, // Amount Paid
+    { width: 20 }, // Remaining Balance
+    { width: 16 }, // Payment Status
+    { width: 34 }, // Remarks / Notes
+  ];''', 1)
+
+          # Replace simple Male/Female sheets with full Student Directory-style formatting and the same column order.
+          start='''  (["Male", "Female"] as const).forEach((gender) => {'''
+          end='''\n\n  // Generate buffer and trigger download'''
+          s=Path('src/lib/excel-export.ts').read_text(); a=s.index(start); b=s.index(end,a)
+          block='''  (["Male", "Female"] as const).forEach((gender) => {
+    const genderSheet = workbook.addWorksheet(`${gender} Students`, {
+      views: [{ state: "frozen", ySplit: 7, showGridLines: true }],
+    });
+    const matching = students.filter((s) => (s.gender || "Unspecified") === gender);
+    const genderMetrics = calculateMetrics(matching);
+    const genderCollectionRate = genderMetrics.totalBilledFees > 0
+      ? (genderMetrics.totalFeesCollected / genderMetrics.totalBilledFees) * 100
+      : 0;
+
+    genderSheet.mergeCells("A1:M1");
+    const gr1 = genderSheet.getCell("A1");
+    gr1.value = `${academyName.toUpperCase()} — ${gender.toUpperCase()} STUDENTS`;
+    gr1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    gr1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
+    gr1.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(1).height = 36;
+
+    genderSheet.mergeCells("A2:M2");
+    const gr2 = genderSheet.getCell("A2");
+    gr2.value = `${gender.toUpperCase()} STUDENT DIRECTORY & FEE COLLECTION`;
+    gr2.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF38BDF8" } };
+    gr2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
+    gr2.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(2).height = 24;
+
+    genderSheet.mergeCells("A3:M3");
+    const gr3 = genderSheet.getCell("A3");
+    gr3.value = `Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Export Generated: ${formattedDateTime}  |  Total ${gender}: ${matching.length}`;
+    gr3.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "FF475569" } };
+    gr3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+    gr3.alignment = { vertical: "middle", horizontal: "center" };
+    genderSheet.getRow(3).height = 22;
+    genderSheet.getRow(4).height = 10;
+
+    const cards = [
+      ["A5:C5", `Total Billed: ${currencyLabel} ${genderMetrics.totalBilledFees.toLocaleString()}`],
+      ["D5:F5", `Total Collected: ${currencyLabel} ${genderMetrics.totalFeesCollected.toLocaleString()}`],
+      ["G5:I5", `Total Outstanding: ${currencyLabel} ${genderMetrics.totalOutstandingFees.toLocaleString()}`],
+      ["J5:L5", `Collection Rate: ${genderCollectionRate.toFixed(1)}%`],
+    ];
+    cards.forEach(([range, value], i) => {
+      genderSheet.mergeCells(range);
+      const c = genderSheet.getCell(range.split(":")[0]);
+      c.value = value;
+      c.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: i === 1 ? "FF15803D" : i === 2 ? "FFB45309" : i === 3 ? "FF1D4ED8" : "FF0F172A" } };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: i === 1 ? "FFDCFCE7" : i === 2 ? "FFFEF3C7" : i === 3 ? "FFDBEAFE" : "FFE2E8F0" } };
+      c.alignment = { vertical: "middle", horizontal: "center" };
+    });
+    genderSheet.getRow(5).height = 26;
+    genderSheet.getRow(6).height = 10;
+
+    const gHeaders = ["Sr. #", "Student ID", "Gender", "Student Full Name", "Phone / WhatsApp", "Course / Class", "Date Joined", "Saved At", `Total Fees (${currencyLabel})`, `Amount Paid (${currencyLabel})`, `Remaining Balance (${currencyLabel})`, "Payment Status", "Remarks / Notes"];
+    const gh = genderSheet.getRow(7);
+    gh.values = gHeaders;
+    gh.height = 28;
+    gh.eachCell((cell) => {
+      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = {
+        top: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
+        left: { style: "thin", color: { argb: `FF${borderSlate}` } },
+        right: { style: "thin", color: { argb: `FF${borderSlate}` } },
+      };
+    });
+    genderSheet.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7, column: 13 } };
+
+    matching.forEach((s, idx) => {
+      const savedTimeDisplay = getStudentSavedAt(s);
+      const currentStatus = computeStudentStatus(s.totalFees, s.amountPaid);
+      const currentRemaining = computeRemaining(s.totalFees, s.amountPaid);
+      const row = genderSheet.addRow([idx + 1, s.id, gender, s.name, s.phone || "—", s.course || "—", s.dateJoined || "—", savedTimeDisplay, s.totalFees, s.amountPaid, currentRemaining, currentStatus, s.notes || "—"]);
+      row.height = 22;
+      row.eachCell((cell, colNumber) => {
+        cell.font = { name: "Segoe UI", size: 10, color: { argb: "FF0F172A" } };
+        cell.border = { top: { style: "thin", color: { argb: `FF${borderSlate}` } }, bottom: { style: "thin", color: { argb: `FF${borderSlate}` } }, left: { style: "thin", color: { argb: `FF${borderSlate}` } }, right: { style: "thin", color: { argb: `FF${borderSlate}` } } };
+        if (idx % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${lightZebra}` } };
+        if ([1,2,3,7,8,12].includes(colNumber)) cell.alignment = { vertical: "middle", horizontal: "center" };
+        else if (colNumber >= 9 && colNumber <= 11) { cell.alignment = { vertical: "middle", horizontal: "right" }; cell.numFmt = "#,##0"; }
+        else cell.alignment = { vertical: "middle", horizontal: "left" };
+        if (colNumber === 12) {
+          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: currentStatus === "Paid" ? "FF15803D" : currentStatus === "Partial" ? "FF1D4ED8" : "FFB45309" } };
+        }
+      });
+    });
+
+    const gf = genderSheet.addRow(["TOTAL", `Students: ${matching.length}`, "", "", "", "", "", "", genderMetrics.totalBilledFees, genderMetrics.totalFeesCollected, genderMetrics.totalOutstandingFees, "", ""]);
+    gf.height = 26;
+    gf.eachCell((cell, colNumber) => {
+      cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FF0F172A" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      cell.border = { top: { style: "thin", color: { argb: "FF0F172A" } }, bottom: { style: "double", color: { argb: "FF0F172A" } }, left: { style: "thin", color: { argb: `FF${borderSlate}` } }, right: { style: "thin", color: { argb: `FF${borderSlate}` } } };
+      if (colNumber >= 9 && colNumber <= 11) { cell.alignment = { vertical: "middle", horizontal: "right" }; cell.numFmt = "#,##0"; }
+    });
+    genderSheet.columns = [
+      { width: 8 }, { width: 16 }, { width: 14 }, { width: 28 }, { width: 18 }, { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 }, { width: 20 }, { width: 16 }, { width: 34 },
+    ];
+  });'''
+          Path('src/lib/excel-export.ts').write_text(s[:a]+block+s[b:])
+          PY
+      - name: Verify build
+        run: npm install && npm run build
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src
+          git diff --cached --check
+          git commit -m "Refine student payment entry and Excel reports [finance-excel]"
+          git push
+          rm -f .github/workflows/fix-student-finance-excel.yml
+          git add .github/workflows/fix-student-finance-excel.yml
+          git commit -m "Remove temporary finance Excel workflow [cleanup]"
+          git push
