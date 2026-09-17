@@ -302,7 +302,7 @@ function StudentsPage() {
                     {/* Course */}
                     <td className="px-5 py-4 text-xs text-muted-foreground">
                       {s.course ? (
-                        <span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">
+                        <span className="whitespace-nowrap rounded-md border border-border/80 bg-muted/40 px-2 py-1">
                           {s.course}
                         </span>
                       ) : (

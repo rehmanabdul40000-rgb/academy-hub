@@ -134,7 +134,6 @@ export async function exportAcademyToExcel(students: Student[]) {
     `Remaining Balance (${currencyLabel})`,
     "Payment Status",
     "Remarks / Notes",
-    "Gender",
   ];
 
   const headerRow = studentsSheet.getRow(7);
@@ -205,7 +204,7 @@ export async function exportAcademyToExcel(students: Student[]) {
       if (colNumber === 1 || colNumber === 2 || colNumber === 3 || colNumber === 7 || colNumber === 8) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
       } else if (colNumber >= 9 && colNumber <= 11) {
-        cell.alignment = { vertical: "middle", horizontal: "right" };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
         cell.numFmt = "#,##0";
       } else if (colNumber === 12) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
@@ -220,7 +219,7 @@ export async function exportAcademyToExcel(students: Student[]) {
           cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FFB45309" } };
         }
       } else {
-        cell.alignment = { vertical: "middle", horizontal: "left" };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
       }
     });
   });
@@ -229,6 +228,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   const footerRow = studentsSheet.addRow([
     "TOTAL",
     `Students: ${students.length}`,
+    "",
     "",
     "",
     "",
@@ -250,8 +250,8 @@ export async function exportAcademyToExcel(students: Student[]) {
       left: { style: "thin", color: { argb: `FF${borderSlate}` } },
       right: { style: "thin", color: { argb: `FF${borderSlate}` } },
     };
-    if (colNumber >= 8 && colNumber <= 10) {
-      cell.alignment = { vertical: "middle", horizontal: "right" };
+    if (colNumber >= 9 && colNumber <= 11) {
+      cell.alignment = { vertical: "middle", horizontal: "center" };
       cell.numFmt = "#,##0";
     }
   });
@@ -296,7 +296,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   sumHeaderRow.eachCell((cell) => {
     cell.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FFFFFFFF" } };
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyDark}` } };
-    cell.alignment = { vertical: "middle", horizontal: "left" };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
     cell.border = {
       bottom: { style: "medium", color: { argb: `FF${navyAccent}` } },
     };
@@ -613,10 +613,10 @@ export async function exportAcademyToExcel(students: Student[]) {
         if ([1, 2, 3, 7, 8, 12].includes(colNumber)) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
         } else if (colNumber >= 9 && colNumber <= 11) {
-          cell.alignment = { vertical: "middle", horizontal: "right" };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
           cell.numFmt = "#,##0";
         } else {
-          cell.alignment = { vertical: "middle", horizontal: "left" };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
         }
         if (colNumber === 12) {
           cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: currentStatus === "Paid" ? "FF15803D" : currentStatus === "Partial" ? "FF1D4ED8" : "FFB45309" } };
@@ -640,7 +640,7 @@ export async function exportAcademyToExcel(students: Student[]) {
         right: { style: "thin", color: { argb: `FF${borderSlate}` } },
       };
       if (colNumber >= 9 && colNumber <= 11) {
-        cell.alignment = { vertical: "middle", horizontal: "right" };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
         cell.numFmt = "#,##0";
       }
     });
