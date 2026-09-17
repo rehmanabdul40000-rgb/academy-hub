@@ -1,0 +1,66 @@
+name: Apply Academy Hub gender feature
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[gender-feature]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          def p(f,a,b):
+              x=Path(f); s=x.read_text(); assert a in s, f"missing {f}: {a[:60]!r}"; x.write_text(s.replace(a,b,1))
+          p('src/types/student.ts','export type PaymentStatus = "Paid" | "Partial" | "Pending";\n','export type PaymentStatus = "Paid" | "Partial" | "Pending";\nexport type StudentGender = "Male" | "Female" | "Unspecified";\n')
+          p('src/types/student.ts','  name: string; // Student Full Name (Required)\n','  name: string; // Student Full Name (Required)\n  gender: StudentGender;\n')
+          p('src/types/student.ts','  name: string;\n  phone?: string;\n','  name: string;\n  gender?: StudentGender;\n  phone?: string;\n')
+          p('src/features/students/students.storage.ts','    if (Array.isArray(parsed)) {\n      return parsed;\n    }\n','    if (Array.isArray(parsed)) {\n      return parsed.map((student) => ({ ...student, gender: student.gender === "Male" || student.gender === "Female" ? student.gender : "Unspecified" }));\n    }\n')
+          p('src/features/students/students.storage.ts','    name: trimmedName,\n    phone: trimmedPhone || undefined,\n','    name: trimmedName,\n    gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",\n    phone: trimmedPhone || undefined,\n')
+          p('src/features/students/students.storage.ts','    name: updates.name !== undefined ? updates.name.trim() : existing.name,\n    phone: updates.phone !== undefined ? updates.phone.trim() || undefined : existing.phone,\n','    name: updates.name !== undefined ? updates.name.trim() : existing.name,\n    gender: updates.gender === "Male" || updates.gender === "Female" || updates.gender === "Unspecified" ? updates.gender : existing.gender || "Unspecified",\n    phone: updates.phone !== undefined ? updates.phone.trim() || undefined : existing.phone,\n')
+          p('src/routes/_authenticated/add-student.tsx','  const [name, setName] = useState("");\n  const [phone, setPhone] = useState("");\n','  const [name, setName] = useState("");\n  const [gender, setGender] = useState<"" | "Male" | "Female">("");\n  const [phone, setPhone] = useState("");\n')
+          p('src/routes/_authenticated/add-student.tsx','    setName("");\n    setPhone("");\n','    setName("");\n    setGender("");\n    setPhone("");\n')
+          p('src/routes/_authenticated/add-student.tsx','    if (!name.trim()) {\n      setErrorMessage("Student Full Name is required.");\n      return;\n    }\n','    if (!name.trim()) {\n      setErrorMessage("Student Full Name is required.");\n      return;\n    }\n    if (!gender) { setErrorMessage("Please select Student Gender."); return; }\n')
+          p('src/routes/_authenticated/add-student.tsx','      id: studentId.trim(),\n      name: name.trim(),\n      phone: phone.trim() || undefined,\n','      id: studentId.trim(),\n      name: name.trim(),\n      gender,\n      phone: phone.trim() || undefined,\n')
+          p('src/routes/_authenticated/add-student.tsx','              {/* Optional Phone & Course Grid */}\n              <div className="grid gap-4 sm:grid-cols-2">\n','''              {/* Gender, Phone & Course Grid */}\n              <div className="grid gap-4 sm:grid-cols-3">\n                <div>\n                  <label className="text-xs font-medium text-foreground">Gender *</label>\n                  <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">\n                    <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>\n                  </select>\n                </div>\n''')
+          p('src/routes/_authenticated/students.tsx','import type { PaymentStatus, Student } from "@/types/student";','import type { PaymentStatus, Student, StudentGender } from "@/types/student";')
+          p('src/routes/_authenticated/students.tsx','  const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");\n','  const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");\n  const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");\n')
+          p('src/routes/_authenticated/students.tsx','      if (!matchesFilter) return false;\n','      const matchesGender = genderFilter === "All" || (s.gender || "Unspecified") === genderFilter;\n      if (!matchesFilter || !matchesGender) return false;\n')
+          p('src/routes/_authenticated/students.tsx','  }, [students, statusFilter, searchQuery]);\n','  }, [students, statusFilter, genderFilter, searchQuery]);\n')
+          p('src/routes/_authenticated/students.tsx','            {/* Export Excel */}\n','''            <div className="flex rounded-lg border border-border bg-background/60 p-0.5">\n              {(["All", "Male", "Female"] as const).map((filter) => (\n                <button key={filter} onClick={() => setGenderFilter(filter)} className={`rounded-md px-3 py-1.5 text-xs ${genderFilter === filter ? "bg-card text-cyan-400 font-semibold" : "text-muted-foreground"}`}>{filter === "All" ? "All Gender" : filter}</button>\n              ))}\n            </div>\n\n            {/* Export Excel */}\n''')
+          p('src/routes/_authenticated/students.tsx','                  <th className="px-5 py-3.5">Student Name</th>\n                  <th className="px-5 py-3.5">Phone / WhatsApp</th>','                  <th className="px-5 py-3.5">Student Name</th>\n                  <th className="px-5 py-3.5">Gender</th>\n                  <th className="px-5 py-3.5">Phone / WhatsApp</th>')
+          p('src/routes/_authenticated/students.tsx','                    {/* Phone */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs">','                    {/* Gender */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.gender || "Unspecified"}</span></td>\n\n                    {/* Phone */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs">')
+          p('src/routes/_authenticated/students.tsx','                    setStatusFilter("All");\n','                    setStatusFilter("All");\n                    setGenderFilter("All");\n')
+          p('src/routes/_authenticated/students.tsx','(searchQuery || statusFilter !== "All") &&','(searchQuery || statusFilter !== "All" || genderFilter !== "All") &&')
+          p('src/routes/_authenticated/dashboard.tsx','  const collectionPercentage =\n','''  const genderSummary = useMemo(() => {\n    const build = (gender: "Male" | "Female" | "Unspecified") => {\n      const matching = students.filter((s) => (s.gender || "Unspecified") === gender);\n      return { students: matching.length, billed: matching.reduce((a,s)=>a+Number(s.totalFees||0),0), collected: matching.reduce((a,s)=>a+Number(s.amountPaid||0),0), outstanding: matching.reduce((a,s)=>a+computeRemaining(Number(s.totalFees||0),Number(s.amountPaid||0)),0) };\n    };\n    return { male: build("Male"), female: build("Female"), unspecified: build("Unspecified") };\n  }, [students]);\n\n  const collectionPercentage =\n''')
+          p('src/routes/_authenticated/dashboard.tsx','      </section>\n\n      <section\n        className="mt-6 rounded-xl border border-border bg-card shadow-sm"','''      </section>\n\n      <section className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Gender Overview">\n        {[ ["Male Students", genderSummary.male], ["Female Students", genderSummary.female], ["Unspecified", genderSummary.unspecified] ].map(([label, d]) => (\n          <article key={label as string} className="rounded-xl border border-border bg-card p-5 shadow-sm">\n            <p className="text-xs font-medium uppercase tracking-wider text-cyan-400">{label as string}</p>\n            <p className="mt-2 font-display text-2xl font-bold text-foreground">{(d as typeof genderSummary.male).students}</p>\n            <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">\n              <span>Billed<br/><b>{formatCurrency((d as typeof genderSummary.male).billed)}</b></span>\n              <span>Collected<br/><b className="text-emerald-400">{formatCurrency((d as typeof genderSummary.male).collected)}</b></span>\n              <span>Outstanding<br/><b className="text-amber-400">{formatCurrency((d as typeof genderSummary.male).outstanding)}</b></span>\n            </div>\n          </article>\n        ))}\n      </section>\n\n      <section\n        className="mt-6 rounded-xl border border-border bg-card shadow-sm"''')
+          p('src/routes/_authenticated/dashboard.tsx','                    <th className="px-5 py-3.5">Student Name</th>\n                    <th className="px-5 py-3.5">Phone</th>','                    <th className="px-5 py-3.5">Student Name</th>\n                    <th className="px-5 py-3.5">Gender</th>\n                    <th className="px-5 py-3.5">Phone</th>')
+          p('src/routes/_authenticated/dashboard.tsx','                      {/* Phone */}\n                      <td className="whitespace-nowrap px-5 py-3.5 text-xs text-muted-foreground">','                      {/* Gender */}\n                      <td className="whitespace-nowrap px-5 py-3.5 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-0.5">{s.gender || "Unspecified"}</span></td>\n\n                      {/* Phone */}\n                      <td className="whitespace-nowrap px-5 py-3.5 text-xs text-muted-foreground">')
+          p('src/lib/excel-export.ts','studentsSheet.mergeCells("A1:L1");','studentsSheet.mergeCells("A1:M1");')
+          p('src/lib/excel-export.ts','studentsSheet.mergeCells("A2:L2");','studentsSheet.mergeCells("A2:M2");')
+          p('src/lib/excel-export.ts','studentsSheet.mergeCells("A3:L3");','studentsSheet.mergeCells("A3:M3");')
+          p('src/lib/excel-export.ts','    "Remarks / Notes",\n  ];','    "Remarks / Notes",\n    "Gender",\n  ];')
+          p('src/lib/excel-export.ts','    s.notes || "—",\n    ]);','    s.notes || "—",\n      s.gender || "Unspecified",\n    ]);')
+          p('src/lib/excel-export.ts','    to: { row: 7, column: 12 },','    to: { row: 7, column: 13 },')
+          p('src/lib/excel-export.ts','    metrics.totalOutstandingFees,\n    "",\n    "",\n  ]);','    metrics.totalOutstandingFees,\n    "",\n    "",\n    "",\n  ]);')
+          p('src/lib/excel-export.ts','    { width: 34 }, // Remarks / Notes\n  ];','    { width: 34 }, // Remarks / Notes\n    { width: 14 }, // Gender\n  ];')
+          marker='  // Generate buffer and trigger download\n'
+          x=Path('src/lib/excel-export.ts'); s=x.read_text(); assert marker in s
+          extra='''  (["Male", "Female"] as const).forEach((gender) => {\n    const sheet = workbook.addWorksheet(`${gender} Students`);\n    const matching = students.filter((s) => (s.gender || "Unspecified") === gender);\n    sheet.addRow([`${academyName} — ${gender} Students`]);\n    sheet.addRow(["Student ID", "Student Name", "Gender", "Phone", "Course / Class", "Date Joined", `Total Fees (${currencyLabel})`, `Paid (${currencyLabel})`, `Remaining (${currencyLabel})`]);\n    matching.forEach((s) => sheet.addRow([s.id, s.name, gender, s.phone || "—", s.course || "—", s.dateJoined || "—", s.totalFees, s.amountPaid, computeRemaining(s.totalFees, s.amountPaid)]));\n    sheet.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: 9 } };\n    sheet.columns = [{width:18},{width:28},{width:14},{width:20},{width:24},{width:16},{width:18},{width:18},{width:20}];\n  });\n\n'''
+          x.write_text(s.replace(marker,extra+marker,1))
+          Path('.github/workflows/apply-gender.yml').unlink()
+      - name: Verify build
+        run: npm ci && npm run build
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --check
+          git commit -m "Add student gender tracking and reporting [gender-feature]"
+          git push
