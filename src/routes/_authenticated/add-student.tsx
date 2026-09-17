@@ -218,7 +218,7 @@ function AddStudentPage() {
               {/* Gender, Phone & Course Grid */}
               <div className="grid items-start gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="flex h-5 items-center text-xs font-medium text-foreground">Gender *</label>
+                  <label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Gender *</span><span aria-hidden="true" className="text-[11px] text-transparent">Optional</span></label>
                   <select id="input-student-gender" required value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
                     <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>
                   </select>

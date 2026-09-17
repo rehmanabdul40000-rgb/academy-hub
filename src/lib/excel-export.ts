@@ -50,7 +50,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   // Row 1: Academy Name Header Banner
   studentsSheet.mergeCells("A1:M1");
   const r1 = studentsSheet.getCell("A1");
-  r1.value = `${academyName.toUpperCase()} — STUDENT DIRECTORY & FEE RECORDS`;
+  r1.value = `${academyName.toUpperCase()} - STUDENT DIRECTORY & FEE RECORDS`;
   r1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
   r1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
   r1.alignment = { vertical: "middle", horizontal: "center" };
@@ -282,7 +282,7 @@ export async function exportAcademyToExcel(students: Student[]) {
 
   summarySheet.mergeCells("A1:D1");
   const sumTitle = summarySheet.getCell("A1");
-  sumTitle.value = `${academyName.toUpperCase()} — EXECUTIVE FEE & REVENUE SUMMARY`;
+  sumTitle.value = `${academyName.toUpperCase()} - EXECUTIVE FEE & REVENUE SUMMARY`;
   sumTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
   sumTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
   sumTitle.alignment = { vertical: "middle", horizontal: "center" };
@@ -354,7 +354,7 @@ export async function exportAcademyToExcel(students: Student[]) {
 
   analyticsSheet.mergeCells("A1:D1");
   const analyticsTitle = analyticsSheet.getCell("A1");
-  analyticsTitle.value = `${academyName.toUpperCase()} — FEE ANALYTICS`;
+  analyticsTitle.value = `${academyName.toUpperCase()} - FEE ANALYTICS`;
   analyticsTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
   analyticsTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
   analyticsTitle.alignment = { vertical: "middle", horizontal: "center" };
@@ -425,7 +425,7 @@ export async function exportAcademyToExcel(students: Student[]) {
   });
   paymentSheet.mergeCells("A1:K1");
   const paymentTitle = paymentSheet.getCell("A1");
-  paymentTitle.value = `${academyName.toUpperCase()} — PAYMENT HISTORY`;
+  paymentTitle.value = `${academyName.toUpperCase()} - PAYMENT HISTORY`;
   paymentTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
   paymentTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
   paymentTitle.alignment = { vertical: "middle", horizontal: "center" };
@@ -522,7 +522,7 @@ export async function exportAcademyToExcel(students: Student[]) {
 
     genderSheet.mergeCells("A1:M1");
     const gr1 = genderSheet.getCell("A1");
-    gr1.value = `${academyName.toUpperCase()} — ${gender.toUpperCase()} STUDENTS`;
+    gr1.value = `${academyName.toUpperCase()} - ${gender.toUpperCase()} STUDENTS`;
     gr1.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
     gr1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navyAccent}` } };
     gr1.alignment = { vertical: "middle", horizontal: "center" };
@@ -651,6 +651,45 @@ export async function exportAcademyToExcel(students: Student[]) {
       { width: 20 }, { width: 16 }, { width: 34 },
     ];
   });
+  // Final workbook-wide alignment and sheet ordering pass.
+  const headerRowsBySheet: Record<string, Set<number>> = {
+    "Students Directory": new Set([1, 7]),
+    "Male Students": new Set([1, 7]),
+    "Female Students": new Set([1, 7]),
+    "Payment History": new Set([1, 3]),
+    "Fee Analytics": new Set([1, 3]),
+    "Fee Summary": new Set([1, 3]),
+  };
+
+  workbook.worksheets.forEach((sheet) => {
+    const headerRows = headerRowsBySheet[sheet.name] || new Set<number>();
+    sheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        const existing = cell.alignment || {};
+        cell.alignment = {
+          ...existing,
+          horizontal: "center",
+          vertical: "middle",
+          ...(headerRows.has(row.number) ? {} : { wrapText: false }),
+        };
+      });
+    });
+  });
+
+  // Export in the requested order: Students Directory, Male, Female, Payment History, Fee Analytics, Fee Summary.
+  const desiredSheetOrder = [
+    "Students Directory",
+    "Male Students",
+    "Female Students",
+    "Payment History",
+    "Fee Analytics",
+    "Fee Summary",
+  ];
+  const orderedSheets = desiredSheetOrder
+    .map((name) => workbook.getWorksheet(name))
+    .filter((sheet): sheet is ExcelJS.Worksheet => Boolean(sheet));
+  (workbook as unknown as { _worksheets: Array<ExcelJS.Worksheet | undefined> })._worksheets = [undefined, ...orderedSheets];
+
   // Generate buffer and trigger download
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
