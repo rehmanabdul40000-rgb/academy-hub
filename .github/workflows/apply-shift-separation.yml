@@ -1,0 +1,134 @@
+name: Apply shift separation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply shift feature
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def edit(path, fn):
+              p = Path(path)
+              s = p.read_text()
+              out = fn(s)
+              if out == s:
+                  raise RuntimeError(f"No change made to {path}")
+              p.write_text(out)
+
+          def types(s):
+              s=s.replace('export type StudentGender = "Male" | "Female" | "Unspecified";\n','export type StudentGender = "Male" | "Female" | "Unspecified";\nexport type StudentShift = "Morning" | "Evening" | "Unspecified";\n',1)
+              s=s.replace('  gender: StudentGender;\n','  gender: StudentGender;\n  shift: StudentShift;\n',1)
+              s=s.replace('  gender?: StudentGender;\n','  gender?: StudentGender;\n  shift?: StudentShift;\n',1)
+              return s
+          edit('src/types/student.ts', types)
+
+          def storage(s):
+              s=s.replace('  PaymentStatus,\n  Student,\n','  PaymentStatus,\n  Student,\n',1)
+              old='gender: student.gender === "Male" || student.gender === "Female" ? student.gender : "Unspecified"'
+              new='gender: student.gender === "Male" || student.gender === "Female" ? student.gender : "Unspecified", shift: student.shift === "Morning" || student.shift === "Evening" ? student.shift : "Unspecified"'
+              s=s.replace(old,new,1)
+              s=s.replace('    gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",\n','    gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",\n    shift: input.shift === "Morning" || input.shift === "Evening" ? input.shift : "Unspecified",\n',1)
+              s=s.replace('    gender: updates.gender === "Male" || updates.gender === "Female" || updates.gender === "Unspecified" ? updates.gender : existing.gender || "Unspecified",\n','    gender: updates.gender === "Male" || updates.gender === "Female" || updates.gender === "Unspecified" ? updates.gender : existing.gender || "Unspecified",\n    shift: updates.shift === "Morning" || updates.shift === "Evening" || updates.shift === "Unspecified" ? updates.shift : existing.shift || "Unspecified",\n',1)
+              return s
+          edit('src/features/students/students.storage.ts', storage)
+
+          def addpage(s):
+              s=s.replace('  const [gender, setGender] = useState<"" | "Male" | "Female">("");\n','  const [gender, setGender] = useState<"" | "Male" | "Female">("");\n  const [shift, setShift] = useState<"" | "Morning" | "Evening">("");\n',1)
+              s=s.replace('    setGender("");\n','    setGender("");\n    setShift("");\n',1)
+              s=s.replace('    if (!gender) { setErrorMessage("Please select Student Gender."); return; }\n','    if (!gender) { setErrorMessage("Please select Student Gender."); return; }\n    if (!shift) { setErrorMessage("Please select Student Shift."); return; }\n',1)
+              s=s.replace('      gender,\n      phone:','      gender,\n      shift,\n      phone:',1)
+              s=s.replace('<div className="grid items-start gap-4 sm:grid-cols-3">','<div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">',1)
+              marker='''                <div>\n                  <label className="flex items-center justify-between text-xs font-medium text-foreground">\n                    <span>Phone / WhatsApp</span>'''
+              insert='''                <div>\n                  <label className="flex items-center justify-between text-xs font-medium text-foreground">\n                    <span>Shift *</span>\n                    <span className="text-[11px] text-muted-foreground">Choose class time</span>\n                  </label>\n                  <select\n                    id="input-student-shift"\n                    required\n                    value={shift}\n                    onChange={(e) => setShift(e.target.value as "" | "Morning" | "Evening")}\n                    className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"\n                  >\n                    <option value="">Select shift</option>\n                    <option value="Morning">Morning Shift (8:00 AM – 2:00 PM)</option>\n                    <option value="Evening">Evening Shift</option>\n                  </select>\n                </div>\n\n'''+marker
+              if marker not in s: raise RuntimeError('Add Student marker missing')
+              s=s.replace(marker,insert,1)
+              return s
+          edit('src/routes/_authenticated/add-student.tsx', addpage)
+
+          def dialogs(s):
+              s=s.replace('  const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");\n','  const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");\n  const [shift, setShift] = useState<"Morning" | "Evening" | "Unspecified">("Unspecified");\n',1)
+              s=s.replace('      setGender(student.gender || "Unspecified");\n','      setGender(student.gender || "Unspecified");\n      setShift(student.shift || "Unspecified");\n',1)
+              s=s.replace('      gender,\n      phone:','      gender,\n      shift,\n      phone:',1)
+              marker='''            <div>\n              <label className="text-xs font-medium text-foreground">Gender *</label>'''
+              start=s.find(marker)
+              course=s.find('''            <div>\n              <label className="text-xs font-medium text-foreground">\n                Course / Class''',start)
+              if start<0 or course<0: raise RuntimeError('Edit Student gender/course markers missing')
+              insert='''            <div>\n              <label className="text-xs font-medium text-foreground">Gender *</label>\n              <select required value={gender === "Unspecified" ? "" : gender} onChange={(e) => setGender(e.target.value as "Male" | "Female")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">\n                <option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option>\n              </select>\n            </div>\n            <div>\n              <label className="text-xs font-medium text-foreground">Shift *</label>\n              <select required value={shift === "Unspecified" ? "" : shift} onChange={(e) => setShift(e.target.value as "Morning" | "Evening")} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">\n                <option value="">Select shift</option><option value="Morning">Morning Shift (8:00 AM – 2:00 PM)</option><option value="Evening">Evening Shift</option>\n              </select>\n            </div>\n'''
+              s=s[:start]+insert+s[course:]
+              return s
+          edit('src/components/academy/student-dialogs.tsx', dialogs)
+
+          def students(s):
+              s=s.replace('  const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");\n','  const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");\n  const [shiftFilter, setShiftFilter] = useState<"All" | "Morning" | "Evening">("All");\n',1)
+              s=s.replace('      const matchesGender = genderFilter === "All" || (s.gender || "Unspecified") === genderFilter;\n      if (!matchesFilter || !matchesGender) return false;\n','      const matchesGender = genderFilter === "All" || (s.gender || "Unspecified") === genderFilter;\n      const matchesShift = shiftFilter === "All" || (s.shift || "Unspecified") === shiftFilter;\n      if (!matchesFilter || !matchesGender || !matchesShift) return false;\n',1)
+              s=s.replace('  }, [students, statusFilter, genderFilter, searchQuery]);\n','  }, [students, statusFilter, genderFilter, shiftFilter, searchQuery]);\n',1)
+              marker='''            {/* Export Excel */}'''
+              shiftui='''            <div className="flex rounded-lg border border-border bg-background/60 p-0.5">\n              {(["All", "Morning", "Evening"] as const).map((filter) => (\n                <button key={filter} onClick={() => setShiftFilter(filter)} className={`rounded-md px-3 py-1.5 text-xs ${shiftFilter === filter ? "bg-card text-cyan-400 font-semibold" : "text-muted-foreground"}`}>{filter === "All" ? "All Shifts" : filter}</button>\n              ))}\n            </div>\n\n'''
+              s=s.replace(marker,shiftui+marker,1)
+              s=s.replace('''                  <th className="px-5 py-3.5">Gender</th>\n                  <th className="px-5 py-3.5">Phone / WhatsApp</th>''','''                  <th className="px-5 py-3.5">Gender</th>\n                  <th className="px-5 py-3.5">Shift</th>\n                  <th className="px-5 py-3.5">Phone / WhatsApp</th>''',1)
+              s=s.replace('''                    {/* Phone */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs">''','''                    {/* Shift */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs">\n                      <span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.shift === "Morning" ? "Morning (8 AM–2 PM)" : s.shift === "Evening" ? "Evening" : "Unspecified"}</span>\n                    </td>\n\n                    {/* Phone */}\n                    <td className="whitespace-nowrap px-5 py-4 text-xs">''',1)
+              return s
+          edit('src/routes/_authenticated/students.tsx', students)
+
+          def dashboard(s):
+              marker='''  const collectionPercentage ='''
+              shift='''  const shiftSummary = useMemo(() => {\n    const build = (shift: "Morning" | "Evening") => {\n      const matching = students.filter((s) => (s.shift || "Unspecified") === shift);\n      return { students: matching.length, billed: matching.reduce((a, s) => a + Number(s.totalFees || 0), 0), collected: matching.reduce((a, s) => a + Number(s.amountPaid || 0), 0), outstanding: matching.reduce((a, s) => a + computeRemaining(Number(s.totalFees || 0), Number(s.amountPaid || 0)), 0) };\n    };\n    return { morning: build("Morning"), evening: build("Evening") };\n  }, [students]);\n\n'''
+              s=s.replace(marker,shift+marker,1)
+              marker2='''      <section className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Gender Overview">'''
+              ui='''      <section className="mt-6 grid gap-4 md:grid-cols-2" aria-label="Shift Overview">\n        {[["Morning Shift • 8 AM–2 PM", shiftSummary.morning], ["Evening Shift", shiftSummary.evening]].map(([label, d]) => (\n          <article key={label as string} className="rounded-xl border border-border bg-card p-5 shadow-sm">\n            <p className="text-xs font-medium uppercase tracking-wider text-cyan-400">{label as string}</p>\n            <p className="mt-2 font-display text-2xl font-bold text-foreground">{(d as typeof shiftSummary.morning).students}</p>\n            <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">\n              <span>Billed<br/><b>{formatCurrency((d as typeof shiftSummary.morning).billed)}</b></span>\n              <span>Collected<br/><b className="text-emerald-400">{formatCurrency((d as typeof shiftSummary.morning).collected)}</b></span>\n              <span>Outstanding<br/><b className="text-amber-400">{formatCurrency((d as typeof shiftSummary.morning).outstanding)}</b></span>\n            </div>\n          </article>\n        ))}\n      </section>\n\n'''
+              if marker2 not in s: raise RuntimeError('Dashboard gender section missing')
+              s=s.replace(marker2,ui+marker2,1)
+              return s
+          edit('src/routes/_authenticated/dashboard.tsx', dashboard)
+
+          def excel(s):
+              s=s.replace('studentsSheet.mergeCells("A1:M1")','studentsSheet.mergeCells("A1:N1")',1)
+              s=s.replace('studentsSheet.mergeCells("A2:M2")','studentsSheet.mergeCells("A2:N2")',1)
+              s=s.replace('studentsSheet.mergeCells("A3:M3")','studentsSheet.mergeCells("A3:N3")',1)
+              s=s.replace('''    "Gender",\n    "Student Full Name",''','''    "Gender",\n    "Shift",\n    "Student Full Name",''',1)
+              s=s.replace('''      s.gender || "Unspecified",\n      s.name,''','''      s.gender || "Unspecified",\n      s.shift === "Morning" ? "Morning (8 AM–2 PM)" : s.shift === "Evening" ? "Evening" : "Unspecified",\n      s.name,''',1)
+              s=s.replace('''    "TOTAL",\n    `Students: ${students.length}`,\n    "",\n    "",''','''    "TOTAL",\n    `Students: ${students.length}`,\n    "",\n    "",\n    "",''',1)
+              s=s.replace('''    { width: 16 }, // Student ID\n    { width: 14 }, // Gender\n    { width: 28 }, // Student Name''','''    { width: 16 }, // Student ID\n    { width: 14 }, // Gender\n    { width: 24 }, // Shift\n    { width: 28 }, // Student Name''',1)
+              s=s.replace('genderSheet.mergeCells("A1:M1")','genderSheet.mergeCells("A1:N1")')
+              s=s.replace('genderSheet.mergeCells("A2:M2")','genderSheet.mergeCells("A2:N2")')
+              s=s.replace('genderSheet.mergeCells("A3:M3")','genderSheet.mergeCells("A3:N3")')
+              s=s.replace('''      "Sr. #", "Student ID", "Gender", "Student Full Name", "Phone / WhatsApp",''','''      "Sr. #", "Student ID", "Gender", "Shift", "Student Full Name", "Phone / WhatsApp",''')
+              s=s.replace('''        idx + 1, s.id, s.gender || "Unspecified", s.name, s.phone || "—",''','''        idx + 1, s.id, s.gender || "Unspecified", s.shift === "Morning" ? "Morning (8 AM–2 PM)" : s.shift === "Evening" ? "Evening" : "Unspecified", s.name, s.phone || "—",''')
+              s=s.replace('''      "TOTAL", `Students: ${matching.length}`, "", "", "", "", "", "",\n      genderMetrics.totalBilledFees,''','''      "TOTAL", `Students: ${matching.length}`, "", "", "", "", "", "", "",\n      genderMetrics.totalBilledFees,''')
+              s=s.replace('''      { width: 8 }, { width: 16 }, { width: 14 }, { width: 28 }, { width: 18 },\n      { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 },\n      { width: 20 }, { width: 16 }, { width: 34 },''','''      { width: 8 }, { width: 16 }, { width: 14 }, { width: 24 }, { width: 28 }, { width: 18 },\n      { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 },\n      { width: 20 }, { width: 16 }, { width: 34 },''')
+              s=s.replace('if ([1, 2, 3, 7, 8, 12].includes(colNumber))','if ([1, 2, 3, 4, 7, 8, 13].includes(colNumber))')
+              s=s.replace('if (colNumber === 12) {','if (colNumber === 13) {')
+              anchor='''  // Final workbook-wide alignment and sheet ordering pass.\n'''
+              block='''  (["Morning", "Evening"] as const).forEach((shift) => {\n    const shiftSheet = workbook.addWorksheet(`${shift} Students`, { views: [{ state: "frozen", ySplit: 7, showGridLines: true }] });\n    const matching = students.filter((student) => (student.shift || "Unspecified") === shift);\n    const shiftMetrics = calculateMetrics(matching);\n    const rate = shiftMetrics.totalBilledFees > 0 ? (shiftMetrics.totalFeesCollected / shiftMetrics.totalBilledFees) * 100 : 0;\n    const title = shift === "Morning" ? "MORNING SHIFT • 8:00 AM–2:00 PM" : "EVENING SHIFT";\n    shiftSheet.mergeCells("A1:N1");\n    const t=shiftSheet.getCell("A1"); t.value=`${academyName.toUpperCase()} - ${title}`; t.font={name:"Segoe UI",size:16,bold:true,color:{argb:"FFFFFFFF"}}; t.fill={type:"pattern",pattern:"solid",fgColor:{argb:`FF${navyAccent}`}}; t.alignment={vertical:"middle",horizontal:"center"}; shiftSheet.getRow(1).height=36;\n    shiftSheet.mergeCells("A2:N2"); const st=shiftSheet.getCell("A2"); st.value=`${shift.toUpperCase()} SHIFT STUDENT DIRECTORY & FEE COLLECTION`; st.font={name:"Segoe UI",size:11,bold:true,color:{argb:"FF38BDF8"}}; st.fill={type:"pattern",pattern:"solid",fgColor:{argb:`FF${navyDark}`}}; st.alignment={vertical:"middle",horizontal:"center"};\n    shiftSheet.mergeCells("A3:N3"); const sm=shiftSheet.getCell("A3"); sm.value=`Institution: ${academyName}  |  Admin: ${settings.adminDisplayName}  |  Session: ${settings.academicSession}  |  Total ${shift}: ${matching.length}`; sm.alignment={vertical:"middle",horizontal:"center"}; sm.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF1F5F9"}}; shiftSheet.getRow(3).height=22;\n    shiftSheet.getRow(4).height=10;\n    const headers=["Sr. #","Student ID","Gender","Shift","Student Full Name","Phone / WhatsApp","Course / Class","Date Joined","Saved At",`Total Fees (${currencyLabel})`,`Amount Paid (${currencyLabel})`,`Remaining Balance (${currencyLabel})`,`Payment Status","Remarks / Notes"];\n    const h=shiftSheet.getRow(7); h.values=headers; h.height=28; h.eachCell(c=>{c.font={name:"Segoe UI",size:10.5,bold:true,color:{argb:"FFFFFFFF"}};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:`FF${navyDark}`}};c.alignment={vertical:"middle",horizontal:"center",wrapText:true};}); shiftSheet.autoFilter={from:{row:7,column:1},to:{row:7,column:14}};\n    matching.forEach((student,idx)=>{const status=computeStudentStatus(student.totalFees,student.amountPaid); const r=shiftSheet.addRow([idx+1,student.id,student.gender||"Unspecified",shift==="Morning"?"Morning (8 AM–2 PM)":"Evening",student.name,student.phone||"—",student.course||"—",student.dateJoined||"—",getStudentSavedAt(student),student.totalFees,student.amountPaid,computeRemaining(student.totalFees,student.amountPaid),status,student.notes||"—"]); r.height=22; r.eachCell((c,col)=>{c.font={name:"Segoe UI",size:10,color:{argb:"FF0F172A"}};c.alignment={vertical:"middle",horizontal:"center"};if(col>=10&&col<=12)c.numFmt="#,##0";});});\n    const f=shiftSheet.addRow(["TOTAL",`Students: ${matching.length}`,"","","","","","","",shiftMetrics.totalBilledFees,shiftMetrics.totalFeesCollected,shiftMetrics.totalOutstandingFees,"",""]); f.eachCell((c,col)=>{c.font={name:"Segoe UI",size:10.5,bold:true};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFE2E8F0"}};c.alignment={vertical:"middle",horizontal:"center"};if(col>=10&&col<=12)c.numFmt="#,##0";});\n    shiftSheet.columns=[{width:8},{width:16},{width:14},{width:24},{width:28},{width:18},{width:24},{width:15},{width:22},{width:18},{width:18},{width:20},{width:16},{width:34}];\n  });\n\n'''
+              if anchor not in s: raise RuntimeError('Excel final pass anchor missing')
+              s=s.replace(anchor,block+anchor,1)
+              s=s.replace('''    "Students Directory": new Set([1, 7]),''','''    "Students Directory": new Set([1, 7]),\n    "Morning Students": new Set([1, 7]),\n    "Evening Students": new Set([1, 7]),''',1)
+              s=s.replace('''    "Students Directory",\n    "Male Students",''','''    "Students Directory",\n    "Morning Students",\n    "Evening Students",\n    "Male Students",''',1)
+              return s
+          edit('src/lib/excel-export.ts', excel)
+
+      - name: Verify production build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit changes and remove one-time workflow
+        run: |
+          rm -f .github/workflows/apply-shift-separation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/types/student.ts src/features/students/students.storage.ts src/routes/_authenticated/add-student.tsx src/components/academy/student-dialogs.tsx src/routes/_authenticated/students.tsx src/routes/_authenticated/dashboard.tsx src/lib/excel-export.ts .github/workflows/apply-shift-separation.yml
+          git diff --cached --quiet || git commit -m "Add morning and evening shift management"
+          git push
