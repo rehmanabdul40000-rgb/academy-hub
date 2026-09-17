@@ -3,6 +3,8 @@ export interface AdminSession {
   username: string;
   email: string;
   role: string;
+  displayName?: string;
+  permissions?: Record<string, boolean>;
   signedInAt: string;
 }
 
@@ -14,29 +16,15 @@ export function getStoredAdminSession(): AdminSession | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as AdminSession;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export function saveAdminSession(session: AdminSession): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } catch (err) {
-    console.error("Failed to save admin session:", err);
-  }
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (err) { console.error("Failed to save admin session:", err); }
 }
-
 export function clearAdminSession(): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch (err) {
-    console.error("Failed to clear admin session:", err);
-  }
+  try { localStorage.removeItem(SESSION_KEY); } catch (err) { console.error("Failed to clear admin session:", err); }
 }
-
-export function hasStoredAdminSession(): boolean {
-  return getStoredAdminSession() !== null;
-}
+export function hasStoredAdminSession(): boolean { return getStoredAdminSession() !== null; }
