@@ -1,0 +1,66 @@
+name: Academy Hub Layout Fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/academy-hub-layout-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply targeted fixes
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const excelPath = 'src/lib/excel-export.ts';
+          let excel = fs.readFileSync(excelPath, 'utf8');
+
+          // Remove the mojibake-prone em dash from Excel sheet titles/data labels.
+          excel = excel.replace(/ — /g, ' - ');
+
+          // Make every generated Excel cell centered horizontally and vertically.
+          // Keep title/header wrapping, but keep data rows on one line so values like 1st Year never wrap.
+          const marker = '  // Generate buffer and trigger download\n';
+          const alignmentBlock = `  // Final workbook-wide alignment and sheet ordering pass.\n  const headerRowsBySheet: Record<string, Set<number>> = {\n    \"Students Directory\": new Set([1, 7]),\n    \"Male Students\": new Set([1, 7]),\n    \"Female Students\": new Set([1, 7]),\n    \"Payment History\": new Set([1, 3]),\n    \"Fee Analytics\": new Set([1, 3]),\n    \"Fee Summary\": new Set([1, 3]),\n  };\n\n  workbook.worksheets.forEach((sheet) => {\n    const headerRows = headerRowsBySheet[sheet.name] || new Set<number>();\n    sheet.eachRow((row) => {\n      row.eachCell((cell) => {\n        const existing = cell.alignment || {};\n        cell.alignment = {\n          ...existing,\n          horizontal: \"center\",\n          vertical: \"middle\",\n          ...(headerRows.has(row.number) ? {} : { wrapText: false }),\n        };\n      });\n    });\n  });\n\n  // Export in the requested order: Students Directory, Male, Female, Payment History, Fee Analytics, Fee Summary.\n  const desiredSheetOrder = [\n    \"Students Directory\",\n    \"Male Students\",\n    \"Female Students\",\n    \"Payment History\",\n    \"Fee Analytics\",\n    \"Fee Summary\",\n  ];\n  const orderedSheets = desiredSheetOrder\n    .map((name) => workbook.getWorksheet(name))\n    .filter((sheet): sheet is ExcelJS.Worksheet => Boolean(sheet));\n  (workbook as unknown as { _worksheets: Array<ExcelJS.Worksheet | undefined> })._worksheets = [undefined, ...orderedSheets];\n\n`;
+
+          if (!excel.includes(alignmentBlock.trim())) {
+            if (!excel.includes(marker)) throw new Error('Could not find Excel buffer marker');
+            excel = excel.replace(marker, alignmentBlock + marker);
+          }
+
+          fs.writeFileSync(excelPath, excel.endsWith('\n') ? excel : excel + '\n');
+
+          const addPath = 'src/routes/_authenticated/add-student.tsx';
+          let add = fs.readFileSync(addPath, 'utf8');
+          const oldGender = '<label className="flex h-5 items-center text-xs font-medium text-foreground">Gender *</label>';
+          const newGender = '<label className="flex h-5 items-center justify-between text-xs font-medium text-foreground"><span>Gender *</span><span aria-hidden="true" className="text-[11px] text-transparent">Optional</span></label>';
+          if (add.includes(oldGender)) add = add.replace(oldGender, newGender);
+          fs.writeFileSync(addPath, add.endsWith('\n') ? add : add + '\n');
+          NODE
+
+      - name: Build verification
+        run: npm ci && npm run build
+
+      - name: Commit fixes and remove one-time workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/excel-export.ts src/routes/_authenticated/add-student.tsx
+          git rm .github/workflows/academy-hub-layout-fix.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Polish Academy Hub Excel layout and form alignment"
+          git push
