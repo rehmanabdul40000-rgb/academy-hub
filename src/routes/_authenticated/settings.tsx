@@ -9,7 +9,7 @@ import {
   Eye,
   EyeOff,
   Save,
-  ShieldCheck,
+  ShieldCheck, Sun, Moon, Power, Upload, Users, UserRound, UserRoundCheck,
   User,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -20,13 +20,15 @@ import {
   saveSettings,
   type AcademySettings,
 } from "@/features/settings/settings.storage";
-import { getStudents } from "@/features/students/students.storage";
+import { getStudents, addStudent } from "@/features/students/students.storage";
 import {
   getDeletedStudents,
   restoreDeletedStudent,
   type DeletedStudentRecord,
 } from "@/features/students/recovery.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
+import { parseStudentImportFile } from "@/lib/student-import";
+import { getWorkspaceSections, saveWorkspaceSections, getWorkspaceTheme, applyWorkspaceTheme, type WorkspaceSection } from "@/features/workspace/workspace.storage";
 import {
   downloadWorkspaceBackup,
   parseWorkspaceBackup,
@@ -53,8 +55,12 @@ function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [recoverySuccess, setRecoverySuccess] = useState(false);
   const [backupError, setBackupError] = useState("");
-  const [deletedStudents, setDeletedStudents] =
-    useState<DeletedStudentRecord[]>(getDeletedStudents());
+  const [deletedStudents, setDeletedStudents] = useState<DeletedStudentRecord[]>(getDeletedStudents());
+  const [workspaceSections, setWorkspaceSections] = useState<WorkspaceSection[]>(getWorkspaceSections());
+  const [theme, setTheme] = useState(getWorkspaceTheme());
+  const [importMessage, setImportMessage] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
@@ -74,6 +80,8 @@ function SettingsPage() {
   useEffect(() => {
     const s = getSettings();
     setDeletedStudents(getDeletedStudents());
+    setWorkspaceSections(getWorkspaceSections());
+    setTheme(getWorkspaceTheme());
     setSettings(s);
     setAcademyName(s.academyName);
     setAdminDisplayName(s.adminDisplayName);
@@ -85,9 +93,13 @@ function SettingsPage() {
     setContactEmail(s.contactEmail || "");
     setContactPhone(s.contactPhone || "");
     setAddress(s.address || "");
+    const onTheme = (e: Event) => setTheme((e as CustomEvent<"dark" | "light">).detail || getWorkspaceTheme());
+    const onSections = () => setWorkspaceSections(getWorkspaceSections());
+    window.addEventListener("academy-theme-updated", onTheme);
+    window.addEventListener("academy-workspace-sections-updated", onSections);
     const handleRecoveryUpdate = () => setDeletedStudents(getDeletedStudents());
     window.addEventListener("academy-recovery-updated", handleRecoveryUpdate);
-    return () => window.removeEventListener("academy-recovery-updated", handleRecoveryUpdate);
+    return () => { window.removeEventListener("academy-recovery-updated", handleRecoveryUpdate); window.removeEventListener("academy-theme-updated", onTheme); window.removeEventListener("academy-workspace-sections-updated", onSections); };
   }, []);
 
   function handleSaveSettings(e: React.FormEvent) {
@@ -113,7 +125,7 @@ function SettingsPage() {
   async function handleExport() {
     try {
       setIsExporting(true);
-      await exportAcademyToExcel(students);
+      await exportAcademyToExcel(students, { sections: workspaceSections });
     } finally {
       setIsExporting(false);
     }
@@ -356,6 +368,51 @@ function SettingsPage() {
           </div>
         </form>
 
+        <article className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <span className="grid size-10 place-items-center rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-400"><Power className="size-5" /></span>
+            <div><h2 className="font-display font-semibold text-foreground">Workspace Sections & Theme</h2><p className="text-xs text-muted-foreground">Disable any section you do not use. Disabled sections are hidden and excluded from Excel exports.</p></div>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {workspaceSections.map((section) => (
+              <label key={section.key} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/40 p-3 text-sm">
+                <span>{section.label}</span>
+                <input type="checkbox" checked={section.enabled} onChange={(e) => {
+                  const next = workspaceSections.map((item) => item.key === section.key ? { ...item, enabled: e.target.checked } : item);
+                  setWorkspaceSections(next); saveWorkspaceSections(next);
+                }} className="size-4 accent-cyan-500" />
+              </label>
+            ))}
+          </div>
+          <div className="mt-5 rounded-xl border border-border bg-background/40 p-4">
+            <div className="mb-3 text-sm font-semibold">Theme</div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant={theme === "dark" ? "default" : "outline"} onClick={() => { setTheme("dark"); applyWorkspaceTheme("dark"); }} className="gap-2"><Moon className="size-4" />Dark</Button>
+              <Button type="button" variant={theme === "light" ? "default" : "outline"} onClick={() => { setTheme("light"); applyWorkspaceTheme("light"); }} className="gap-2"><Sun className="size-4" />Light</Button>
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <span className="grid size-10 place-items-center rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-400"><Upload className="size-5" /></span>
+            <div><h2 className="font-display font-semibold text-foreground">Import Student Data</h2><p className="text-xs text-muted-foreground">Import Excel (.xlsx) or CSV files. The first worksheet is read and common Academy Hub column names are supported.</p></div>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <input ref={importInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+              const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setImportMessage(""); setIsImporting(true);
+              try {
+                const result = await parseStudentImportFile(file); let imported = 0; let skipped = 0;
+                const existing = new Set(getStudents().map((student) => student.id.toLowerCase()));
+                for (const row of result.rows) { if (existing.has(row.id.toLowerCase())) { skipped += 1; continue; } const saved = addStudent(row); if (saved.success) { imported += 1; existing.add(row.id.toLowerCase()); } else skipped += 1; }
+                setImportMessage(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`);
+              } catch (error) { setImportMessage(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); }
+            }} />
+            <Button type="button" onClick={() => importInputRef.current?.click()} disabled={isImporting} className="gap-2 bg-cyan-600 text-white hover:bg-cyan-500"><Upload className="size-4" />{isImporting ? "Importing..." : "Import Excel / CSV"}</Button>
+            {importMessage && <p className="text-xs text-cyan-300">{importMessage}</p>}
+          </div>
+        </article>
+
         {/* Card 3: Data Management & Backup */}
         <article className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-3">
@@ -485,6 +542,15 @@ function SettingsPage() {
           ) : (
             <p className="mt-4 text-xs text-muted-foreground">No recently deleted students.</p>
           )}
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {(["Male", "Female"] as const).map((gender) => {
+              const records = deletedStudents.filter((record) => record.student.gender === gender);
+              return <article key={gender} className="rounded-xl border border-border bg-background/30 p-4">
+                <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-semibold">{gender === "Male" ? <UserRound className="size-4 text-cyan-400" /> : <UserRoundCheck className="size-4 text-cyan-400" />}{gender} Deleted Records</div><span className="rounded-full border border-amber-500/30 px-2 py-1 text-xs">{records.length}</span></div>
+                <div className="mt-3 space-y-2">{records.length ? records.map((record) => <div key={record.recoveryId} className="flex items-center justify-between gap-2 rounded-lg border border-border p-2.5"><div className="min-w-0"><p className="truncate text-xs font-semibold">{record.student.name}</p><p className="font-mono text-[10px] text-cyan-400">{record.student.id}</p></div><Button type="button" size="sm" variant="outline" onClick={() => { const result = restoreDeletedStudent(record.recoveryId); if (result.success) setRecoverySuccess(true); }}>{`Restore ${gender}`}</Button></div>) : <p className="text-xs text-muted-foreground">No deleted {gender.toLowerCase()} records.</p>}</div>
+              </article>;
+            })}
+          </div>
           {recoverySuccess ? (
             <p className="mt-3 text-xs font-medium text-emerald-400">
               Student restored successfully and returned to the active Students list.
