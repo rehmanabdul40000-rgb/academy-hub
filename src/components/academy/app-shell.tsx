@@ -7,7 +7,6 @@ import { getInitials, getSettings, type AcademySettings } from "@/features/setti
 import { getStudents } from "@/features/students/students.storage";
 import { can } from "@/features/auth/permissions";
 import { getWorkspaceSections, getWorkspaceTheme, applyWorkspaceTheme, type WorkspaceSectionKey } from "@/features/workspace/workspace.storage";
-import { supabase } from "@/integrations/supabase/client";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { Route as RootRoute } from "@/routes/__root";
 
@@ -52,7 +51,7 @@ export function AppShell({ children, title, subtitle, onSearchChange, searchValu
   const sectionMap = new Map(sections.map((section) => [section.key, section.enabled]));
   const linkSection: Record<string, WorkspaceSectionKey> = { "/dashboard": "dashboard", "/students": "students", "/male-students": "maleStudents", "/female-students": "femaleStudents", "/morning-students": "morningShift", "/evening-students": "eveningShift", "/add-student": "addStudent", "/shifts": "shiftManagement", "/users": "userManagement", "/change-password": "changePassword", "/settings": "settings" };
   const visibleLinks = links.filter((link) => (sectionMap.get(linkSection[link.to]!) ?? true) && (isAdmin || !link.permission || session?.permissions?.[link.permission]));
-  async function handleLogout() { clearAdminSession(); await queryClient.cancelQueries(); queryClient.clear(); try { await supabase.auth.signOut(); } catch {} await navigate({ to: "/login", replace: true }); }
+  async function handleLogout() { clearAdminSession(); await queryClient.cancelQueries(); queryClient.clear(); await navigate({ to: "/login", replace: true }); }
   async function handleExport() { try { setIsExporting(true); await exportAcademyToExcel(getStudents(), { sections }); } catch (err) { console.error("Export error:", err); } finally { setIsExporting(false); } }
   function handleHeaderSearchSubmit(e: React.FormEvent) { e.preventDefault(); if (onSearchChange) onSearchChange(headerSearch); else navigate({ to: "/students" }); }
   const sidebar = <div className="flex h-full flex-col bg-sidebar px-4 py-5 text-sidebar-foreground">
