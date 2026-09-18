@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Search, Users } from "lucide-react";
+import { ArrowLeft, Search, Users, Eye, ReceiptText, Edit, Trash2, FileSpreadsheet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import { Button } from "@/components/ui/button";
+import { ViewStudentModal, EditStudentModal, QuickPaymentModal, DeleteStudentDialog } from "@/components/academy/student-dialogs";
+import { can } from "@/features/auth/permissions";
+import { exportStudentSegmentToExcel } from "@/lib/excel-export";
 import { calculateMetrics, formatCurrency, getStudentSavedAt, getStudents } from "@/features/students/students.storage";
 import type { Student } from "@/types/student";
 
@@ -18,6 +21,11 @@ const segmentMeta: Record<Segment, { title: string; subtitle: string; empty: str
 export function StudentSegmentPage({ segment }: { segment: Segment }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [payingStudent, setPayingStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const refresh = () => setStudents(getStudents());
@@ -53,13 +61,16 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
       <div className="mt-6 rounded-xl border border-border bg-card shadow-sm">
         <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold"><Users className="size-4 text-cyan-400" />{meta.title} — {segmentStudents.length} records</div>
-          <div className="relative w-full sm:w-80"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this group..." className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-xs outline-none focus:border-cyan-500" /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" disabled={isExporting || !can("reports")} onClick={async () => { setIsExporting(true); try { await exportStudentSegmentToExcel(segmentStudents, meta.title); } finally { setIsExporting(false); } }} className="gap-1.5"><FileSpreadsheet className="size-4" />{isExporting ? "Exporting..." : "Export This Section"}</Button>
+            <div className="relative w-full sm:w-72">
+          <div className="relative w-full sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this group..." className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-xs outline-none focus:border-cyan-500" /></div>
         </div>
         {filtered.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1250px] text-sm">
               <thead><tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3 text-center">Student ID</th><th className="px-4 py-3 text-center">Student Name</th><th className="px-4 py-3 text-center">Gender</th><th className="px-4 py-3 text-center">Shift</th><th className="px-4 py-3 text-center">Class Time</th><th className="px-4 py-3 text-center">Phone / WhatsApp</th><th className="px-4 py-3 text-center">Course / Class</th><th className="px-4 py-3 text-center">Date Joined</th><th className="px-4 py-3 text-center">Saved At</th><th className="px-4 py-3 text-center">Total Fees</th><th className="px-4 py-3 text-center">Paid</th><th className="px-4 py-3 text-center">Remaining</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-center">Notes</th>
+                <th className="px-4 py-3 text-center">Student ID</th><th className="px-4 py-3 text-center">Student Name</th><th className="px-4 py-3 text-center">Gender</th><th className="px-4 py-3 text-center">Shift</th><th className="px-4 py-3 text-center">Class Time</th><th className="px-4 py-3 text-center">Phone / WhatsApp</th><th className="px-4 py-3 text-center">Course / Class</th><th className="px-4 py-3 text-center">Date Joined</th><th className="px-4 py-3 text-center">Saved At</th><th className="px-4 py-3 text-center">Total Fees</th><th className="px-4 py-3 text-center">Paid</th><th className="px-4 py-3 text-center">Remaining</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-center">Notes</th><th className="px-4 py-3 text-center">Actions</th>
               </tr></thead>
               <tbody className="divide-y divide-border/60">{filtered.map((s) => <tr key={s.id} className="hover:bg-muted/20">
                 <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold text-cyan-400">{s.id}</td>
@@ -76,6 +87,12 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
                 <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold text-amber-400">{formatCurrency(s.remainingFees)}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.status}</td>
                 <td className="max-w-[220px] truncate px-4 py-4 text-center text-xs text-muted-foreground" title={s.notes || ""}>{s.notes || "—"}</td>
+                <td className="whitespace-nowrap px-4 py-4 text-center"><div className="flex justify-center gap-1">
+                  {can("studentsView") && <Button variant="ghost" size="icon" title="View" onClick={() => setViewingStudent(s)}><Eye className="size-4" /></Button>}
+                  {can("payments") && <Button variant="ghost" size="icon" title="Collect Payment" onClick={() => setPayingStudent(s)} className="text-emerald-400"><ReceiptText className="size-4" /></Button>}
+                  {can("studentsEdit") && <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditingStudent(s)}><Edit className="size-4" /></Button>}
+                  {can("studentsDelete") && <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingStudent(s)} className="text-destructive"><Trash2 className="size-4" /></Button>}
+                </div></td>
               </tr>)}</tbody>
             </table>
           </div>
