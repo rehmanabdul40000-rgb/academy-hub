@@ -58,7 +58,7 @@ export async function exportAcademyToExcel(students: Student[], options?: { sect
   const enabled = new Set((options?.sections || []).filter((section) => section.enabled).map((section) => section.key));
   const useSectionFilter = Boolean(options?.sections?.length);
   const on = (key: string) => !useSectionFilter || enabled.has(key as never);
-  addDirectorySheet(workbook, "Students Directory", students, "STUDENT DIRECTORY & FEE RECORDS", academyName, currencyLabel, session, admin); if (on("morningShift")) addDirectorySheet(workbook, "Morning Students", students.filter((s) => s.shift === "Morning"), "MORNING SHIFT • 8:00 AM–2:00 PM", academyName, currencyLabel, session, admin);
+  if (on("students")) addDirectorySheet(workbook, "Students Directory", students, "STUDENT DIRECTORY & FEE RECORDS", academyName, currencyLabel, session, admin); if (on("morningShift")) addDirectorySheet(workbook, "Morning Students", students.filter((s) => s.shift === "Morning"), "MORNING SHIFT • 8:00 AM–2:00 PM", academyName, currencyLabel, session, admin);
   if (on("eveningShift")) addDirectorySheet(workbook, "Evening Students", students.filter((s) => s.shift === "Evening"), "EVENING SHIFT", academyName, currencyLabel, session, admin);
   if (on("maleStudents")) addDirectorySheet(workbook, "Male Students", students.filter((s) => s.gender === "Male"), "MALE STUDENTS", academyName, currencyLabel, session, admin);
   if (on("femaleStudents")) addDirectorySheet(workbook, "Female Students", students.filter((s) => s.gender === "Female"), "FEMALE STUDENTS", academyName, currencyLabel, session, admin);
