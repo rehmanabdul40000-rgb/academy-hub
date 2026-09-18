@@ -15,25 +15,32 @@ function key(value: unknown): string {
   return normalize(value).toLowerCase().replace(/[\\s_/-]+/g, "");
 }
 
-function rowToInput(values: unknown[], rowNumber: number): { row?: NewStudentInput; error?: string } {
-  const map = new Map<string, string>();
-  values.forEach((value, index) => {
-    map.set(String(index), normalize(value));
-  });
-  const aliases: Record<string, number[]> = {
-    id: [0,1],
-    name: [1,2],
-    gender: [2,3],
-    phone: [3,4,5],
-    course: [4,5,6],
-    dateJoined: [5,6,7],
-    shift: [6,7,8],
-    shiftTime: [7,8,9],
-    totalFees: [8,9,10],
-    amountPaid: [9,10,11],
-    notes: [10,11,12],
+function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, number>): { row?: NewStudentInput; error?: string } {
+  const cells = (values || []).map((value) => normalize(value));
+  const normalized = new Map<string, string>();
+  cells.forEach((value, index) => normalized.set(String(index), value));
+  const aliases: Record<string, string[]> = {
+    id: ["studentid", "id", "studentnumber", "registrationno", "rollno"],
+    name: ["studentname", "fullname", "name", "studentfullname"],
+    gender: ["gender", "sex"],
+    phone: ["phonewhatsapp", "phone", "whatsapp", "contact", "mobile"],
+    course: ["courseclass", "course", "class", "courseclassname"],
+    dateJoined: ["datejoined", "joiningdate", "dateofjoining"],
+    shift: ["shift", "shiftname"],
+    shiftTime: ["shifttime", "classtime", "time", "classtime"],
+    totalFees: ["totalfees", "fees", "totalfee", "total"],
+    amountPaid: ["amountpaid", "paid", "paidamount", "initialpaid"],
+    notes: ["notes", "remarks", "remark", "comments"],
   };
-  const get = (field: keyof typeof aliases) => aliases[field].map((i) => map.get(String(i)) || "").find(Boolean) || "";
+  const get = (field: keyof typeof aliases) => {
+    if (columns) {
+      for (const alias of aliases[field]) {
+        const index = columns.get(alias);
+        if (index !== undefined) return normalized.get(String(index)) || "";
+      }
+    }
+    return "";
+  };
   const id = get("id");
   const name = get("name");
   if (!id || !name) return { error: `Row ${rowNumber}: Student ID and Student Name are required.` };
@@ -62,13 +69,16 @@ export async function parseStudentImportFile(file: File): Promise<StudentImportR
   const sheet = workbook.worksheets[0];
   if (!sheet) return { rows: [], errors: ["The file does not contain a worksheet."], totalRows: 0 };
   const values = Array.from({ length: sheet.rowCount }, (_, index) => sheet.getRow(index + 1).values as unknown[]);
-  const header = (values[0] || []).map((value) => key(value));
-  const looksLikeHeader = header.some((value) => ["studentid","studentname","fullname","gender","phonewhatsapp","courseclass","totalfees"].includes(value));
-  const start = looksLikeHeader ? 2 : 1;
+  const headerCells = (values[0] || []).map((value) => key(value));
+  const knownHeader = headerCells.some((value) => ["studentid","studentname","fullname","gender","phonewhatsapp","courseclass","totalfees"].includes(value));
+  const columns = new Map<string, number>();
+  if (knownHeader) headerCells.forEach((value, index) => { if (value) columns.set(value, index); });
+  const start = knownHeader ? 2 : 1;
   const rows: NewStudentInput[] = [];
   const errors: string[] = [];
+  if (!knownHeader) errors.push("The first row must contain column headings such as Student ID, Student Name, Gender, Total Fees, and Amount Paid.");
   for (let rowNumber = start; rowNumber <= values.length; rowNumber += 1) {
-    const parsed = rowToInput(values[rowNumber - 1] || [], rowNumber);
+    const parsed = rowToInput(values[rowNumber - 1] || [], rowNumber, columns);
     if (parsed.row) rows.push(parsed.row);
     else if (parsed.error) errors.push(parsed.error);
   }
