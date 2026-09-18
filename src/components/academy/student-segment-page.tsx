@@ -63,8 +63,8 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           <div className="flex items-center gap-2 text-sm font-semibold"><Users className="size-4 text-cyan-400" />{meta.title} — {segmentStudents.length} records</div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" disabled={isExporting || !can("reports")} onClick={async () => { setIsExporting(true); try { await exportStudentSegmentToExcel(segmentStudents, meta.title); } finally { setIsExporting(false); } }} className="gap-1.5"><FileSpreadsheet className="size-4" />{isExporting ? "Exporting..." : "Export This Section"}</Button>
-            <div className="relative w-full sm:w-72">
-          <div className="relative w-full sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this group..." className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-xs outline-none focus:border-cyan-500" /></div>
+            <div className="relative w-full sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this group..." className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-xs outline-none focus:border-cyan-500" /></div>
+          </div>
         </div>
         {filtered.length ? (
           <div className="overflow-x-auto">
