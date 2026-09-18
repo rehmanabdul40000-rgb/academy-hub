@@ -1,0 +1,55 @@
+ACADEMY HUB — AI PROJECT HANDOFF
+
+Repository: rehmanabdul40000-rgb/academy-hub
+Current architecture: browser localStorage only.
+Do not reintroduce Supabase/PostgreSQL/scalable cloud data unless the user explicitly requests a new database phase.
+Do not modify tuition-tide-pro.
+
+Navigation:
+Dashboard; All Students; Male Students; Female Students; Morning Shift; Evening Shift; Add Student; Shift Management; Users & Permissions; Change Password; Settings.
+
+Student fields:
+Student ID (manual, required); Full Name (required); Gender (required: Male/Female); Phone optional; Course/Class optional; Date Joined optional; Shift optional/blank allowed; Class Time auto from shift but editable; Total Fees; Amount Paid at Enrollment optional/blank; Remaining Fees calculated; Payment Status automatic; Notes; Saved At.
+
+Shift rules:
+- Shift dropdown only Morning Shift and Evening Shift.
+- Blank Shift is valid.
+- Class Time auto-fills from shift and remains editable.
+
+Features:
+- Dashboard with time-based greeting, current time, student stats, fee summary, outstanding fees, recent students, gender summary, quick payment.
+- Student search/filter/view/edit/delete.
+- Recently Deleted and Restore.
+- Male/Female/Morning/Evening sections.
+- Collect Payment, payment history, receipts/print, reports.
+- Excel export: Students, Fee Summary, Fee Analytics, Payment History, Male Students, Female Students.
+- Excel/CSV import.
+- Settings for academy/session/currency/contact/address/admin display name/admin username/password.
+- Workspace backup/restore.
+- Users & Permissions.
+- Change Password.
+- Workspace section enable/disable.
+- Dark theme and charcoal/dark-slate Light theme.
+- Quick theme buttons in top header.
+
+Admin display name is used by greeting, profile, receipts and Excel.
+Password is hidden by default with show/hide control.
+Current permissions are application/UI level, not server-backed multi-user authorization.
+
+Vercel:
+- Deploy GitHub repo to Vercel.
+- Keep repository root.
+- Let Vercel detect React/TanStack/Vite.
+- Optional initial password env: VITE_DEFAULT_ADMIN_PASSWORD.
+- Existing intended credentials: admin / 123.
+- localStorage is NOT shared between localhost and Vercel.
+
+AI rules:
+- Preserve all existing features unless explicitly asked to change them.
+- Preserve the four segment sections.
+- Do not make optional fields required.
+- Preserve fee/payment behavior and Excel behavior.
+- Preserve theme/readability.
+- Test locally before production.
+- Never expose secrets.
+- Prefer small isolated commits.
