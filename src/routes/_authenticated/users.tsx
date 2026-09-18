@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Check, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
+import { can } from "@/features/auth/permissions";
 import { Button } from "@/components/ui/button";
 import { createUser, DEFAULT_PERMISSIONS, deleteUser, getUsers, updateUser, type AcademyUser, type PermissionKey, type UserPermissions } from "@/features/users/users.storage";
 
-export const Route = createFileRoute("/_authenticated/users")({ component: UsersPage });
+export const Route = createFileRoute("/_authenticated/users")({ beforeLoad: () => { if (!can("userManagement")) throw redirect({ to: "/dashboard" }); }, component: UsersPage });
 
 const permissionLabels: Record<PermissionKey, string> = {
   dashboard: "View Dashboard", studentsView: "View Students", studentsSave: "Save Students", studentsEdit: "Edit Students", studentsDelete: "Delete Students", payments: "Collect / Manage Payments", reports: "Reports & Excel Export", shiftManagement: "Manage Shifts", userManagement: "Manage Users & Permissions", settings: "Workspace Settings",
