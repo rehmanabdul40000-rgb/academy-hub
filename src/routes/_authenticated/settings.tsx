@@ -21,7 +21,7 @@ import {
   saveSettings,
   type AcademySettings,
 } from "@/features/settings/settings.storage";
-import { getStudents, addStudent } from "@/features/students/students.storage";
+import { getStudents, bulkAddStudents } from "@/features/students/students.storage";
 import {
   getDeletedStudents,
   restoreDeletedStudent,
@@ -404,10 +404,9 @@ function SettingsPage() {
             <input ref={importInputRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setImportMessage(""); setIsImporting(true);
               try {
-                const result = await parseStudentImportFile(file); let imported = 0; let skipped = 0;
-                const existing = new Set(getStudents().map((student) => student.id.toLowerCase()));
-                for (const row of result.rows) { if (existing.has(row.id.toLowerCase())) { skipped += 1; continue; } const saved = addStudent(row); if (saved.success) { imported += 1; existing.add(row.id.toLowerCase()); } else skipped += 1; }
-                setImportMessage(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`);
+                const result = await parseStudentImportFile(file);
+                const bulk = bulkAddStudents(result.rows);
+                setImportMessage(`Import complete: ${bulk.imported} added, ${bulk.skipped} skipped, ${result.errors.length + bulk.errors.length} invalid rows.`);
               } catch (error) { setImportMessage(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); }
             }} />
             <Button type="button" onClick={() => importInputRef.current?.click()} disabled={isImporting} className="gap-2 bg-cyan-600 text-white hover:bg-cyan-500"><Upload className="size-4" />{isImporting ? "Importing..." : "Import Excel / CSV"}</Button>
