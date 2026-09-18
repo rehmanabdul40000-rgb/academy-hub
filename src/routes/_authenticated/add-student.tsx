@@ -3,12 +3,13 @@ import { ArrowLeft, CheckCircle2, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import { can } from "@/features/auth/permissions";
+import { isWorkspaceSectionEnabled } from "@/features/workspace/workspace.storage";
 import { Button } from "@/components/ui/button";
 import { getSettings } from "@/features/settings/settings.storage";
 import { getShiftById, formatShiftTime, getShifts, type AcademyShift } from "@/features/shifts/shifts.storage";
 import { addStudent, computeRemaining, computeStudentStatus, formatCurrency } from "@/features/students/students.storage";
 
-export const Route = createFileRoute("/_authenticated/add-student")({ beforeLoad: () => { if (!can("studentsSave")) throw redirect({ to: "/dashboard" }); }, head: () => ({ meta: [{ title: "Add Student — Academy Hub" }, { name: "description", content: "Enroll a new student in Academy Hub." }] }), component: AddStudentPage });
+export const Route = createFileRoute("/_authenticated/add-student")({ beforeLoad: () => { if (!isWorkspaceSectionEnabled("addStudent") || !can("studentsSave")) throw redirect({ to: "/dashboard" }); }, head: () => ({ meta: [{ title: "Add Student — Academy Hub" }, { name: "description", content: "Enroll a new student in Academy Hub." }] }), component: AddStudentPage });
 const inputClass = "mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20";
 
 function AddStudentPage() {
