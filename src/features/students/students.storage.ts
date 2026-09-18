@@ -33,6 +33,96 @@ export function saveStudentsList(students: Student[]): void {
 export function getPaymentHistory(student: Student): PaymentRecord[] { return [...(student.payments || [])].sort((a, b) => `${b.paymentDate} ${b.paymentTime}`.localeCompare(`${a.paymentDate} ${a.paymentTime}`)); }
 export function getStudentById(id: string): Student | undefined { return getStudents().find((s) => s.id.trim().toLowerCase() === id.trim().toLowerCase()); }
 
+export function bulkAddStudents(inputs: NewStudentInput[]): { success: boolean; imported: number; skipped: number; errors: string[]; students: Student[] } {
+  const all = getStudents();
+  const existingIds = new Set(all.map((student) => student.id.trim().toLowerCase()));
+  const batchIds = new Set<string>();
+  const students: Student[] = [];
+  const errors: string[] = [];
+
+  for (let index = 0; index < inputs.length; index += 1) {
+    const input = inputs[index]!;
+    const rowNumber = index + 2;
+    const trimmedId = (input.id || "").trim();
+    const trimmedName = (input.name || "").trim();
+    const trimmedPhone = (input.phone || "").trim();
+
+    if (!trimmedId) { errors.push(`Row ${rowNumber}: Student ID is required.`); continue; }
+    if (!trimmedName) { errors.push(`Row ${rowNumber}: Student Full Name is required.`); continue; }
+    if (input.totalFees === undefined || isNaN(Number(input.totalFees)) || Number(input.totalFees) < 0) {
+      errors.push(`Row ${rowNumber}: Total Fees must be a valid non-negative number.`);
+      continue;
+    }
+
+    const normalizedId = trimmedId.toLowerCase();
+    if (existingIds.has(normalizedId) || batchIds.has(normalizedId)) {
+      errors.push(`Row ${rowNumber}: Student ID "${trimmedId}" is already in use.`);
+      continue;
+    }
+
+    const totalFees = Number(input.totalFees);
+    const amountPaid = Math.max(0, Number(input.amountPaid || 0));
+    if (amountPaid > totalFees) {
+      errors.push(`Row ${rowNumber}: Amount Paid cannot be greater than Total Fees.`);
+      continue;
+    }
+
+    const nowDate = new Date();
+    const nowIso = nowDate.toISOString();
+    const dateAddedFormatted = nowDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const timeAddedFormatted = nowDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    const savedAtFormatted = `${dateAddedFormatted}, ${timeAddedFormatted}`;
+    const remainingFees = computeRemaining(totalFees, amountPaid);
+    const status = computeStudentStatus(totalFees, amountPaid);
+    const enrollmentPayment: PaymentRecord | undefined = amountPaid > 0 ? {
+      id: `PAY-ENROLL-${nowDate.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      studentId: trimmedId,
+      studentName: trimmedName,
+      amount: amountPaid,
+      paymentDate: dateAddedFormatted,
+      paymentTime: timeAddedFormatted,
+      previousPaid: 0,
+      previousRemaining: totalFees,
+      newPaid: amountPaid,
+      newRemaining: remainingFees,
+      recordedBy: getSettings().adminDisplayName || "Admin",
+      note: "Enrollment payment",
+    } : undefined;
+
+    students.push({
+      id: trimmedId,
+      name: trimmedName,
+      gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",
+      shift: input.shift === "Morning" || input.shift === "Evening" ? input.shift : "Unspecified",
+      shiftTime: input.shiftTime?.trim() || undefined,
+      phone: trimmedPhone || undefined,
+      course: (input.course || "").trim() || undefined,
+      dateJoined: (input.dateJoined || "").trim() || undefined,
+      totalFees,
+      amountPaid,
+      remainingFees,
+      status,
+      notes: (input.notes || "").trim() || undefined,
+      savedAt: savedAtFormatted,
+      dateAdded: dateAddedFormatted,
+      timeAdded: timeAddedFormatted,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      payments: enrollmentPayment ? [enrollmentPayment] : undefined,
+    });
+    batchIds.add(normalizedId);
+  }
+
+  if (students.length > 0) saveStudentsList([...students, ...all]);
+  return {
+    success: errors.length === 0,
+    imported: students.length,
+    skipped: inputs.length - students.length,
+    errors,
+    students,
+  };
+}
+
 export function addStudent(input: NewStudentInput): { success: boolean; error?: string; student?: Student } {
   const trimmedId = (input.id || "").trim(); const trimmedName = (input.name || "").trim(); const trimmedPhone = (input.phone || "").trim();
   if (!trimmedId) return { success: false, error: "Student ID is required." };
