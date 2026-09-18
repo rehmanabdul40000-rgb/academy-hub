@@ -67,7 +67,17 @@ function SettingsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {\n    let active = true;\n    getScalableDatabaseStatus().then((status) => {\n      if (active) setDatabaseStatus(status);\n    }).catch(() => {\n      if (active) setDatabaseStatus({ configured: false, reachable: false, studentCount: null });\n    });\n    return () => { active = false; };\n  }, []);\n\n  // Form states
+  useEffect(() => {
+    let active = true;
+    getScalableDatabaseStatus().then((status) => {
+      if (active) setDatabaseStatus(status);
+    }).catch(() => {
+      if (active) setDatabaseStatus({ configured: false, reachable: false, studentCount: null });
+    });
+    return () => { active = false; };
+  }, []);
+
+  // Form states
   const [academyName, setAcademyName] = useState(settings.academyName);
   const [adminDisplayName, setAdminDisplayName] = useState(settings.adminDisplayName);
   const [adminUsername, setAdminUsername] = useState(settings.adminUsername);
