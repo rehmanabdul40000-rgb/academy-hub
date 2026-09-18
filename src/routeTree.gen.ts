@@ -22,6 +22,9 @@ import { Route as AuthenticatedEveningStudentsRouteImport } from './routes/_auth
 import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated/shifts'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
+import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated/shifts'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({ id: '/_authenticated', getParentRoute: () => rootRouteImport } as any)
@@ -34,6 +37,9 @@ const AuthenticatedMaleStudentsRoute = AuthenticatedMaleStudentsRouteImport.upda
 const AuthenticatedFemaleStudentsRoute = AuthenticatedFemaleStudentsRouteImport.update({ id: '/female-students', path: '/female-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedMorningStudentsRoute = AuthenticatedMorningStudentsRouteImport.update({ id: '/morning-students', path: '/morning-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedEveningStudentsRoute = AuthenticatedEveningStudentsRouteImport.update({ id: '/evening-students', path: '/evening-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({ id: '/shifts', path: '/shifts', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({ id: '/users', path: '/users', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedChangePasswordRoute = AuthenticatedChangePasswordRouteImport.update({ id: '/change-password', path: '/change-password', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({ id: '/shifts', path: '/shifts', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({ id: '/users', path: '/users', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedChangePasswordRoute = AuthenticatedChangePasswordRouteImport.update({ id: '/change-password', path: '/change-password', getParentRoute: () => AuthenticatedRouteRoute } as any)
