@@ -1,13 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { AlertCircle, Eye, EyeOff, GraduationCap, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { signInAdmin } from "@/features/auth/auth.functions";
 import { getStoredAdminSession, saveAdminSession } from "@/features/auth/auth.session";
 import { getSettings } from "@/features/settings/settings.storage";
 import { authenticateUser } from "@/features/users/users.storage";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign In — Academy Hub" }, { name: "description", content: "Private access for Academy Hub student and fee management." }, { property: "og:title", content: "Sign In — Academy Hub" }, { property: "og:description", content: "Private access for Academy Hub student and fee management." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -15,7 +12,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const navigate = useNavigate(); const authenticate = useServerFn(signInAdmin);
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false); const [isSubmitting, setIsSubmitting] = useState(false); const [isLeaving, setIsLeaving] = useState(false); const [error, setError] = useState(""); const [academyBranding, setAcademyBranding] = useState("Academy Hub");
   useEffect(() => { const s = getSettings(); setAcademyBranding(s.academyName); if (getStoredAdminSession()) navigate({ to: "/dashboard", replace: true }); }, [navigate]);
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -31,7 +28,6 @@ function LoginPage() {
       const currentSettings = getSettings(); const expectedUsername = currentSettings.adminUsername.trim().toLowerCase(); const expectedPassword = currentSettings.adminPassword ?? "";
       if (username.trim().toLowerCase() !== expectedUsername || password !== expectedPassword) { setError("Invalid username or password."); return; }
       saveAdminSession({ id: "admin-workspace-session", username: currentSettings.adminUsername || username, displayName: currentSettings.adminDisplayName || "Admin", email: currentSettings.contactEmail || "admin@academyhub.local", role: "admin", signedInAt: new Date().toISOString() });
-      try { const result = await authenticate({ data: { username: expectedUsername, password: expectedPassword } }); if (result.ok && result.accessToken && result.refreshToken) await supabase.auth.setSession({ access_token: result.accessToken, refresh_token: result.refreshToken }); } catch {}
       setIsLeaving(true); await new Promise((resolve) => window.setTimeout(resolve, 200)); await navigate({ to: "/dashboard", replace: true });
     } catch { setError("Something went wrong. Please try again."); } finally { setIsSubmitting(false); }
   }
