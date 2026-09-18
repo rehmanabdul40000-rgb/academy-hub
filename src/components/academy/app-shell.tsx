@@ -6,7 +6,7 @@ import { clearAdminSession, getStoredAdminSession } from "@/features/auth/auth.s
 import { getInitials, getSettings, type AcademySettings } from "@/features/settings/settings.storage";
 import { getStudents } from "@/features/students/students.storage";
 import { can } from "@/features/auth/permissions";
-import { getWorkspaceSections, getWorkspaceTheme, type WorkspaceSectionKey } from "@/features/workspace/workspace.storage";
+import { getWorkspaceSections, getWorkspaceTheme, applyWorkspaceTheme, type WorkspaceSectionKey } from "@/features/workspace/workspace.storage";
 import { supabase } from "@/integrations/supabase/client";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { Route as RootRoute } from "@/routes/__root";
@@ -33,6 +33,7 @@ export function AppShell({ children, title, subtitle, onSearchChange, searchValu
   useEffect(() => {
     setSettings(getSettings());
     setTheme(getWorkspaceTheme());
+    applyWorkspaceTheme(getWorkspaceTheme());
     setSections(getWorkspaceSections());
     function handleSettingsUpdate(e: Event) { const detail = (e as CustomEvent<AcademySettings>).detail; setSettings(detail || getSettings()); }
     const onTheme = (e: Event) => setTheme((e as CustomEvent<"dark" | "light">).detail || getWorkspaceTheme());
