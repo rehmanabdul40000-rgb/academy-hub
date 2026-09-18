@@ -38,7 +38,8 @@ export const getScalableDatabaseStatus = createServerFn({ method: "GET" }).handl
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count, error } = await supabaseAdmin
+    const db = supabaseAdmin as any;
+    const { count, error } = await db
       .from("academy_students")
       .select("id", { count: "exact", head: true });
 
@@ -62,10 +63,11 @@ export const listScalableStudentsPage = createServerFn({ method: "POST" })
   .validator((input: unknown) => pageSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
 
-    let query = supabaseAdmin
+    let query = db
       .from("academy_students")
       .select(
         "id, student_id, full_name, gender, phone, course, date_joined, shift, shift_time, total_fees, amount_paid, remaining_fees, payment_status, notes, created_at, updated_at",
@@ -99,6 +101,7 @@ export const bulkImportStudentsToDatabase = createServerFn({ method: "POST" })
   .validator((input: unknown) => bulkSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
     const rows: NewStudentInput[] = data.rows;
 
     const payload = rows.map((row) => ({
@@ -116,7 +119,7 @@ export const bulkImportStudentsToDatabase = createServerFn({ method: "POST" })
       notes: row.notes?.trim() || null,
     }));
 
-    const { data: inserted, error } = await supabaseAdmin
+    const { data: inserted, error } = await db
       .from("academy_students")
       .upsert(payload, { onConflict: "workspace_id,student_id", ignoreDuplicates: false })
       .select("id, student_id");
