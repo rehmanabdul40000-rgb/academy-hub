@@ -55,7 +55,6 @@ function StudentsPage() {
   const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const importInputRef = useState<HTMLInputElement | null>(null);
 
   // Dialog states
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
