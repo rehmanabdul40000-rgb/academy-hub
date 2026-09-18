@@ -401,7 +401,7 @@ function SettingsPage() {
             <div><h2 className="font-display font-semibold text-foreground">Import Student Data</h2><p className="text-xs text-muted-foreground">Import Excel (.xlsx) or CSV files. The first worksheet is read and common Academy Hub column names are supported.</p></div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <input ref={importInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+            <input ref={importInputRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setImportMessage(""); setIsImporting(true);
               try {
                 const result = await parseStudentImportFile(file); let imported = 0; let skipped = 0;
