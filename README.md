@@ -296,7 +296,7 @@ git push origin main
 
 ## Vercel deployment
 
-Academy Hub is suitable for Vercel deployment as a React/Vite/TanStack application. Vercel supports Vite/React deployments and can automatically detect the framework during project import. citeturn0search0turn0search1
+Academy Hub is suitable for Vercel deployment as a React/Vite/TanStack application. Vercel supports Vite/React deployments and can automatically detect the framework during project import.
 
 ### Recommended method: GitHub integration
 
@@ -310,7 +310,7 @@ Academy Hub is suitable for Vercel deployment as a React/Vite/TanStack applicati
 7. Use the repository's normal build settings unless Vercel asks for an override.
 8. Click **Deploy**.
 
-Vercel's Git integration can automatically deploy pushes to the connected production branch and can create preview deployments for branches/PRs. citeturn0search0turn0search8
+Vercel's Git integration can automatically deploy pushes to the connected production branch and can create preview deployments for branches/PRs.
 
 ### For this repository
 
