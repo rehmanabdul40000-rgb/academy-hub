@@ -19,6 +19,9 @@ import { Route as AuthenticatedMaleStudentsRouteImport } from './routes/_authent
 import { Route as AuthenticatedFemaleStudentsRouteImport } from './routes/_authenticated/female-students'
 import { Route as AuthenticatedMorningStudentsRouteImport } from './routes/_authenticated/morning-students'
 import { Route as AuthenticatedEveningStudentsRouteImport } from './routes/_authenticated/evening-students'
+import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated/shifts'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({ id: '/_authenticated', getParentRoute: () => rootRouteImport } as any)
@@ -31,6 +34,9 @@ const AuthenticatedMaleStudentsRoute = AuthenticatedMaleStudentsRouteImport.upda
 const AuthenticatedFemaleStudentsRoute = AuthenticatedFemaleStudentsRouteImport.update({ id: '/female-students', path: '/female-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedMorningStudentsRoute = AuthenticatedMorningStudentsRouteImport.update({ id: '/morning-students', path: '/morning-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
 const AuthenticatedEveningStudentsRoute = AuthenticatedEveningStudentsRouteImport.update({ id: '/evening-students', path: '/evening-students', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({ id: '/shifts', path: '/shifts', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({ id: '/users', path: '/users', getParentRoute: () => AuthenticatedRouteRoute } as any)
+const AuthenticatedChangePasswordRoute = AuthenticatedChangePasswordRouteImport.update({ id: '/change-password', path: '/change-password', getParentRoute: () => AuthenticatedRouteRoute } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -43,6 +49,9 @@ export interface FileRoutesByFullPath {
   '/female-students': typeof AuthenticatedFemaleStudentsRoute
   '/morning-students': typeof AuthenticatedMorningStudentsRoute
   '/evening-students': typeof AuthenticatedEveningStudentsRoute
+  '/shifts': typeof AuthenticatedShiftsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/change-password': typeof AuthenticatedChangePasswordRoute
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
@@ -58,6 +67,9 @@ export interface FileRoutesById {
   '/_authenticated/female-students': typeof AuthenticatedFemaleStudentsRoute
   '/_authenticated/morning-students': typeof AuthenticatedMorningStudentsRoute
   '/_authenticated/evening-students': typeof AuthenticatedEveningStudentsRoute
+  '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,6 +92,9 @@ declare module '@tanstack/react-router' {
     '/_authenticated/female-students': { id: '/_authenticated/female-students'; path: '/female-students'; fullPath: '/female-students'; preLoaderRoute: typeof AuthenticatedFemaleStudentsRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
     '/_authenticated/morning-students': { id: '/_authenticated/morning-students'; path: '/morning-students'; fullPath: '/morning-students'; preLoaderRoute: typeof AuthenticatedMorningStudentsRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
     '/_authenticated/evening-students': { id: '/_authenticated/evening-students'; path: '/evening-students'; fullPath: '/evening-students'; preLoaderRoute: typeof AuthenticatedEveningStudentsRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
+    '/_authenticated/shifts': { id: '/_authenticated/shifts'; path: '/shifts'; fullPath: '/shifts'; preLoaderRoute: typeof AuthenticatedShiftsRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
+    '/_authenticated/users': { id: '/_authenticated/users'; path: '/users'; fullPath: '/users'; preLoaderRoute: typeof AuthenticatedUsersRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
+    '/_authenticated/change-password': { id: '/_authenticated/change-password'; path: '/change-password'; fullPath: '/change-password'; preLoaderRoute: typeof AuthenticatedChangePasswordRouteImport; parentRoute: typeof AuthenticatedRouteRoute }
   }
 }
 interface AuthenticatedRouteRouteChildren {
@@ -91,6 +106,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFemaleStudentsRoute: typeof AuthenticatedFemaleStudentsRoute
   AuthenticatedMorningStudentsRoute: typeof AuthenticatedMorningStudentsRoute
   AuthenticatedEveningStudentsRoute: typeof AuthenticatedEveningStudentsRoute
+  AuthenticatedShiftsRoute: typeof AuthenticatedShiftsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
 }
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAddStudentRoute,
@@ -101,6 +119,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFemaleStudentsRoute,
   AuthenticatedMorningStudentsRoute,
   AuthenticatedEveningStudentsRoute,
+  AuthenticatedShiftsRoute,
+  AuthenticatedUsersRoute,
+  AuthenticatedChangePasswordRoute,
 }
 const AuthenticatedRouteRouteWithChildren = AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 interface RootRouteChildren { IndexRoute: typeof IndexRoute; AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren; LoginRoute: typeof LoginRoute }
