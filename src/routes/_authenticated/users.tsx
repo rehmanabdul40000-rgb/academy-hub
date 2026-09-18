@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Check, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import { can } from "@/features/auth/permissions";
