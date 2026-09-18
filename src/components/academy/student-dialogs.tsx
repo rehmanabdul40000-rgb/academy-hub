@@ -744,7 +744,7 @@ export function ViewStudentModal({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
-            <Button
+            {can("studentsDelete") && <Button
               type="button"
               variant="destructive"
               size="sm"
@@ -756,10 +756,10 @@ export function ViewStudentModal({
             >
               <Trash2 className="size-3.5" />
               Delete
-            </Button>
+            </Button>}
 
             <div className="flex items-center gap-2">
-              <Button
+              {can("studentsEdit") && <Button
                 type="button"
                 variant="outline"
                 size="sm"
@@ -771,8 +771,8 @@ export function ViewStudentModal({
               >
                 <Edit3 className="size-3.5" />
                 Edit
-              </Button>
-              {student.remainingFees > 0 && (
+              </Button>}
+              {can("payments") && student.remainingFees > 0 && (
                 <Button
                   type="button"
                   size="sm"
