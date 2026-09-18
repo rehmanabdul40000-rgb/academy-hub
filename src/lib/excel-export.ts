@@ -27,6 +27,31 @@ function addDirectorySheet(workbook: ExcelJS.Workbook, name: string, students: S
   students.forEach((student, index) => { const status = computeStudentStatus(student.totalFees, student.amountPaid); const row = sheet.addRow([index + 1, student.id, student.gender || "Unspecified", student.shift === "Morning" ? "Morning" : student.shift === "Evening" ? "Evening" : "Unspecified", student.name, student.phone || "—", student.course || "—", student.dateJoined || "—", getStudentSavedAt(student), student.totalFees, student.amountPaid, computeRemaining(student.totalFees, student.amountPaid), status, student.notes || "—"]); styleDataRow(row, index % 2 === 1, [10, 11, 12]); const statusCell = row.getCell(13); statusCell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: status === "Paid" ? "FF15803D" : status === "Partial" ? "FF1D4ED8" : "FFB45309" } }; statusCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: status === "Paid" ? "FFDCFCE7" : status === "Partial" ? "FFDBEAFE" : "FFFEF3C7" } }; });
   const footer = sheet.addRow(["TOTAL", `Students: ${students.length}`, "", "", "", "", "", "", "", metrics.totalBilledFees, metrics.totalFeesCollected, metrics.totalOutstandingFees, "", ""]); styleFooter(footer, [10, 11, 12]); sheet.columns = [{ width: 8 }, { width: 16 }, { width: 14 }, { width: 18 }, { width: 28 }, { width: 18 }, { width: 24 }, { width: 15 }, { width: 22 }, { width: 18 }, { width: 18 }, { width: 20 }, { width: 16 }, { width: 34 }]; return sheet;
 }
+export async function exportStudentSegmentToExcel(students: Student[], segmentName: string) {
+  const settings = getSettings();
+  const academyName = settings.academyName?.trim() || "Academy Hub";
+  const currencyLabel = settings.currencyLabel || "Rs";
+  const session = settings.academicSession || "—";
+  const admin = settings.adminDisplayName || "Admin";
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = admin;
+  workbook.created = new Date();
+  workbook.modified = new Date();
+  addDirectorySheet(workbook, segmentName.slice(0, 31), students, segmentName.toUpperCase(), academyName, currencyLabel, session, admin);
+  const now = new Date().toISOString().split("T")[0];
+  const safe = segmentName.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${academyName.replace(/[^a-zA-Z0-9_-]/g, "_")}_${safe}_${now}.xlsx`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export async function exportAcademyToExcel(students: Student[], options?: { sections?: WorkspaceSection[] }) {
   const settings = getSettings(); const academyName = settings.academyName?.trim() || "Academy Hub"; const currencyLabel = settings.currencyLabel || "Rs"; const session = settings.academicSession || "—"; const admin = settings.adminDisplayName || "Admin";
   const workbook = new ExcelJS.Workbook(); workbook.creator = admin; workbook.created = new Date(); workbook.modified = new Date();
