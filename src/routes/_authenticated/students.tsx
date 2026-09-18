@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
   Download,
   Edit,
@@ -32,7 +32,7 @@ import { exportAcademyToExcel } from "@/lib/excel-export";
 import { can } from "@/features/auth/permissions";
 import type { PaymentStatus, Student, StudentGender } from "@/types/student";
 
-export const Route = createFileRoute("/_authenticated/students")({
+export const Route = createFileRoute("/_authenticated/students")({ beforeLoad: () => { if (!can("studentsView")) throw redirect({ to: "/dashboard" }); },
   head: () => ({
     meta: [
       { title: "Students Directory — Academy Hub" },
