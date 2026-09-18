@@ -190,6 +190,14 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
