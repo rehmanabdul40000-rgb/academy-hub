@@ -29,6 +29,7 @@ import {
   getStudents,
 } from "@/features/students/students.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
+import { can } from "@/features/auth/permissions";
 import type { PaymentStatus, Student, StudentGender } from "@/types/student";
 
 export const Route = createFileRoute("/_authenticated/students")({
