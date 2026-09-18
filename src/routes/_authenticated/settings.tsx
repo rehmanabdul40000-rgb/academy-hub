@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   Building2,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
+import { can } from "@/features/auth/permissions";
 import { Button } from "@/components/ui/button";
 import {
   getSettings,
@@ -36,6 +37,7 @@ import {
 } from "@/lib/workspace-backup";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  beforeLoad: () => { if (!can("settings")) throw redirect({ to: "/dashboard" }); },
   head: () => ({
     meta: [
       { title: "Settings — Academy Hub" },
