@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Clock3, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
+import { can } from "@/features/auth/permissions";
 import { Button } from "@/components/ui/button";
 import { getShifts, saveShifts, type AcademyShift } from "@/features/shifts/shifts.storage";
 
-export const Route = createFileRoute("/_authenticated/shifts")({ component: ShiftsPage });
+export const Route = createFileRoute("/_authenticated/shifts")({ beforeLoad: () => { if (!can("shiftManagement")) throw redirect({ to: "/dashboard" }); }, component: ShiftsPage });
 
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<AcademyShift[]>(getShifts());
