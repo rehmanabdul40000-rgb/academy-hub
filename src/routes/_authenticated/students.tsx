@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
-  Download,
+  Download, Upload,
   Edit,
   Eye,
   FileSpreadsheet,
@@ -30,6 +30,8 @@ import {
 } from "@/features/students/students.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { can } from "@/features/auth/permissions";
+import { parseStudentImportFile } from "@/lib/student-import";
+import { addStudent } from "@/features/students/students.storage";
 import type { PaymentStatus, Student, StudentGender } from "@/types/student";
 
 export const Route = createFileRoute("/_authenticated/students")({ beforeLoad: () => { if (!can("studentsView")) throw redirect({ to: "/dashboard" }); },
@@ -52,6 +54,8 @@ function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");
   const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useState<HTMLInputElement | null>(null);
 
   // Dialog states
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -96,6 +100,8 @@ function StudentsPage() {
       );
     });
   }, [students, statusFilter, genderFilter, searchQuery]);
+
+  async function handleImport(file: File) { try { setIsImporting(true); const result = await parseStudentImportFile(file); const existing = new Set(getStudents().map((student) => student.id.toLowerCase())); let imported = 0; let skipped = 0; for (const row of result.rows) { if (existing.has(row.id.toLowerCase())) { skipped++; continue; } const saved = addStudent(row); if (saved.success) { imported++; existing.add(row.id.toLowerCase()); } else skipped++; } window.alert(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`); refreshStudents(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); } }
 
   async function handleExport() {
     try {
@@ -198,6 +204,10 @@ function StudentsPage() {
               ))}
             </div>
 
+            {can("studentsSave") && <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-foreground hover:bg-accent">
+              <Upload className="size-4" />{isImporting ? "Importing..." : "Import"}
+              <input type="file" accept=".xlsx,.xls,.csv" className="hidden" disabled={isImporting} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void handleImport(file); }} />
+            </label>}
             {/* Export Excel */}
             <Button
               variant="outline"
