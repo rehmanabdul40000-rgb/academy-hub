@@ -206,7 +206,7 @@ function StudentsPage() {
 
             {can("studentsSave") && <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-foreground hover:bg-accent">
               <Upload className="size-4" />{isImporting ? "Importing..." : "Import"}
-              <input type="file" accept=".xlsx,.xls,.csv" className="hidden" disabled={isImporting} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void handleImport(file); }} />
+              <input type="file" accept=".xlsx,.csv" className="hidden" disabled={isImporting} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void handleImport(file); }} />
             </label>}
             {/* Export Excel */}
             <Button
