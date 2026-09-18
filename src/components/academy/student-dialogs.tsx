@@ -15,6 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getSettings } from "@/features/settings/settings.storage";
+import { can } from "@/features/auth/permissions";
 import {
   beginStudentDeletionSnapshot,
   cancelStudentDeletionSnapshot,
