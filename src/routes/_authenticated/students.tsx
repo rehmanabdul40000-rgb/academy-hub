@@ -30,11 +30,12 @@ import {
 } from "@/features/students/students.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { can } from "@/features/auth/permissions";
+import { getWorkspaceSections, isWorkspaceSectionEnabled } from "@/features/workspace/workspace.storage";
 import { parseStudentImportFile } from "@/lib/student-import";
 import { addStudent } from "@/features/students/students.storage";
 import type { PaymentStatus, Student, StudentGender } from "@/types/student";
 
-export const Route = createFileRoute("/_authenticated/students")({ beforeLoad: () => { if (!can("studentsView")) throw redirect({ to: "/dashboard" }); },
+export const Route = createFileRoute("/_authenticated/students")({ beforeLoad: () => { if (!isWorkspaceSectionEnabled("students") || !can("studentsView")) throw redirect({ to: "/dashboard" }); },
   head: () => ({
     meta: [
       { title: "Students Directory — Academy Hub" },
@@ -105,7 +106,7 @@ function StudentsPage() {
   async function handleExport() {
     try {
       setIsExporting(true);
-      await exportAcademyToExcel(students);
+      await exportAcademyToExcel(students, { sections: getWorkspaceSections() });
     } catch (err) {
       console.error("Failed to export Excel:", err);
     } finally {
