@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
-  Download, Upload,
+  Upload,
   Edit,
   Eye,
   FileSpreadsheet,
