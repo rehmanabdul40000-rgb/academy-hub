@@ -29,6 +29,7 @@ import {
 } from "@/features/students/recovery.storage";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { parseStudentImportFile } from "@/lib/student-import";
+import { getScalableDatabaseStatus } from "@/features/data/scalable-data.functions";
 import { getWorkspaceSections, saveWorkspaceSections, getWorkspaceTheme, applyWorkspaceTheme, type WorkspaceSection } from "@/features/workspace/workspace.storage";
 import {
   downloadWorkspaceBackup,
@@ -62,10 +63,11 @@ function SettingsPage() {
   const [theme, setTheme] = useState(getWorkspaceTheme());
   const [importMessage, setImportMessage] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [databaseStatus, setDatabaseStatus] = useState<{ configured: boolean; reachable: boolean; studentCount: number | null } | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
 
-  // Form states
+  useEffect(() => {\n    let active = true;\n    getScalableDatabaseStatus().then((status) => {\n      if (active) setDatabaseStatus(status);\n    }).catch(() => {\n      if (active) setDatabaseStatus({ configured: false, reachable: false, studentCount: null });\n    });\n    return () => { active = false; };\n  }, []);\n\n  // Form states
   const [academyName, setAcademyName] = useState(settings.academyName);
   const [adminDisplayName, setAdminDisplayName] = useState(settings.adminDisplayName);
   const [adminUsername, setAdminUsername] = useState(settings.adminUsername);
@@ -411,6 +413,34 @@ function SettingsPage() {
             }} />
             <Button type="button" onClick={() => importInputRef.current?.click()} disabled={isImporting} className="gap-2 bg-cyan-600 text-white hover:bg-cyan-500"><Upload className="size-4" />{isImporting ? "Importing..." : "Import Excel / CSV"}</Button>
             {importMessage && <p className="text-xs text-cyan-300">{importMessage}</p>}
+          </div>
+        </article>
+
+        <article className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <span className="grid size-10 place-items-center rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-400"><Database className="size-5" /></span>
+            <div>
+              <h2 className="font-display font-semibold text-foreground">Scalable Database &amp; Multi-User Mode</h2>
+              <p className="text-xs text-muted-foreground">Cloud mode uses PostgreSQL with indexed search and pagination instead of loading the whole student directory into the browser.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-border bg-background/40 p-4">
+              <p className="text-xs text-muted-foreground">Current data mode</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{databaseStatus?.configured && databaseStatus.reachable ? "Cloud PostgreSQL" : "Browser Local Storage"}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-background/40 p-4">
+              <p className="text-xs text-muted-foreground">Cloud connection</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{databaseStatus?.reachable ? "Connected" : "Not connected yet"}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-background/40 p-4">
+              <p className="text-xs text-muted-foreground">Cloud student records</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{typeof databaseStatus?.studentCount === "number" ? databaseStatus.studentCount.toLocaleString() : "—"}</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 text-xs leading-5 text-muted-foreground">
+            <p className="font-semibold text-foreground">Large-data foundation is added safely.</p>
+            <p className="mt-1">The repository now contains the PostgreSQL schema, role/permission rules, indexed search, paginated reads, and bulk-import API for high-volume use. Local mode remains active until a Supabase project is connected, so your current localhost records are not disturbed.</p>
           </div>
         </article>
 
