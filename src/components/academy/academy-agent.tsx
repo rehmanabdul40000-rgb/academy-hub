@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Download, Mic, MicOff, Send, X } from "lucide-react";
+import { Bot, Mic, MicOff, Send, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { calculateMetrics, getStudents } from "@/features/students/students.storage";
