@@ -507,3 +507,31 @@ That future phase should NOT be mixed into this stable localStorage release.
 Academy Hub is a polished local/browser Student & Fee Management System with student directory, gender and shift sections, fee collection, payment history, receipts, Excel export/import, dashboard analytics, settings, backup/restore, Recently Deleted, Users & Permissions, Change Password, workspace section controls, and Dark/charcoal themes.
 
 The stable release intentionally prioritizes reliability and simple local operation over shared cloud storage.
+
+
+## Final Vercel deployment guide
+
+The stable release is browser/localStorage based. It does not use Supabase as its active data store.
+
+### Dashboard deployment
+1. Test locally first with `npm run build` and `npm run dev`.
+2. Push only tested code to GitHub `main`.
+3. Open Vercel and choose **Add New → Project**.
+4. Import `rehmanabdul40000-rgb/academy-hub`.
+5. Keep the repository root as the Root Directory (`./`).
+6. Do not convert the project to Next.js; keep the existing React/TanStack Start setup.
+7. If Vercel asks for a build command, use `npm run build`.
+8. Deploy and test the generated `*.vercel.app` URL.
+
+Vercel supports Vite/React deployments and GitHub-connected deployments. See the official Vercel Vite/React template: https://vercel.com/templates/template/vite-react
+
+### CLI deployment
+```bash
+npm run build
+npx vercel --prod
+```
+
+### Important
+- Do not add Supabase service-role/secret keys to Vercel for this stable localStorage release.
+- Localhost browser storage and Vercel browser storage are separate. Vercel is the live website, not a shared database.
+- If the Vercel project is already connected to this GitHub repository, pushing a tested commit to `main` can trigger a new deployment.
