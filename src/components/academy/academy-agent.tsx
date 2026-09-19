@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bot, Mic, MicOff, Send, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { calculateMetrics, getStudents } from "@/features/students/students.storage";
+import { addStudent, calculateMetrics, getStudents } from "@/features/students/students.storage";
 import { speakAgentMessage, startAgentListening } from "@/features/agent/agent-voice";
 import { exportAcademyToExcel } from "@/lib/excel-export";
 import { getWorkspaceSections } from "@/features/workspace/workspace.storage";
@@ -14,6 +14,7 @@ const MESSAGE_KEY = "academy_hub_agent_messages_v3";
 const DRAFT_KEY = "academy_hub_agent_student_draft_v2";
 const OPTIONAL_DONE_KEY = "academy_hub_agent_optional_done_v1";
 const OPEN_KEY = "academy_hub_agent_open_v2";
+const LAST_SAVE_KEY = "academy_hub_agent_last_save_v1";
 const DRAFT_EVENT = "academy-agent-draft-updated";
 
 const routes = [
@@ -56,6 +57,7 @@ function readMessages(): AgentMessage[] { try { return JSON.parse(localStorage.g
 function saveMessages(messages: AgentMessage[]) { localStorage.setItem(MESSAGE_KEY, JSON.stringify(messages.slice(-60))); }
 function isGreeting(q: string) { return /^(hi|hello|hey|salam|assalam o alaikum|aoa|good morning|good afternoon|good evening)$/i.test(normalize(q)); }
 function isSkip(q: string) { return /^(skip|none|blank|not now|leave it|no|no thanks)$/i.test(normalize(q)); }
+function isPositive(q: string) { return /^(yes|yeah|yep|ok|okay|haan|han|ji|theek|save)$/i.test(normalize(q)); }
 function nextStudentField(draft: StudentDraft) {
   if (!draft.id) return "id"; if (!draft.name) return "name"; if (!draft.gender) return "gender"; if (!draft.totalFees) return "totalFees";
   const done = new Set(readOptionalDone());
@@ -109,29 +111,55 @@ function applyExpected(command: string, field: string | null, current: StudentDr
 
 export function AcademyAgent() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(() => typeof window === "undefined" ? true : sessionStorage.getItem(OPEN_KEY) !== "false");
+  const [open, setOpen] = useState(() => typeof window !== "undefined" && sessionStorage.getItem(OPEN_KEY) === "true");
   const [input, setInput] = useState(""); const [listening, setListening] = useState(false); const [draft, setDraft] = useState<StudentDraft>(readDraft());
   const [messages, setMessages] = useState<AgentMessage[]>(() => { const saved = readMessages(); return saved.length ? saved : [{ id: 1, role: "agent", text: "Assalam-o-alaikum Sir. What would you like to do?" }]; });
   const students = useMemo(() => getStudents(), [messages]); const metrics = calculateMetrics(students);
   useEffect(() => { const onDraft = (e: Event) => setDraft((e as CustomEvent<StudentDraft>).detail || readDraft()); window.addEventListener(DRAFT_EVENT, onDraft); return () => window.removeEventListener(DRAFT_EVENT, onDraft); }, []);
   function setAgentOpen(value: boolean) { setOpen(value); sessionStorage.setItem(OPEN_KEY, String(value)); }
   function answer(response: string, userText: string) { const next = [...messages, { id: Date.now(), role: "user" as const, text: userText }, { id: Date.now() + 1, role: "agent" as const, text: response }].slice(-60); setMessages(next); saveMessages(next); setInput(""); speakAgentMessage(response); }
+  async function saveCurrentStudent(command: string) {
+    const current = readDraft();
+    const missing = nextStudentField(current);
+    if (missing) return answer(`Student save nahi ho sakta. Abhi ${questionFor(missing)}`, command);
+    const result = addStudent({
+      id: current.id!,
+      name: current.name!,
+      gender: current.gender!,
+      shift: current.shift === "morning" ? "Morning" : current.shift === "evening" ? "Evening" : undefined,
+      phone: current.phone,
+      course: current.course,
+      dateJoined: current.dateJoined,
+      totalFees: Number(current.totalFees),
+      amountPaid: Number(current.amountPaid || 0),
+      notes: current.notes,
+    });
+    if (!result.success) return answer(result.error || "Student save nahi ho saka.", command);
+    clearAgentDraft();
+    setDraft({});
+    sessionStorage.setItem(LAST_SAVE_KEY, "true");
+    await navigate({ to: "/students" });
+    answer(`Student ${result.student?.name || current.name} successfully save ho gaya. All Students mein record available hai.`, command);
+  }
+
   async function handleCommand(raw: string) {
     const command = raw.trim(); if (!command) return; const q = normalize(command);
     if (isGreeting(command)) return answer("Wa alaikum assalam Sir. How can I help?", command);
-    if (/^(help|what can you do|commands)$/i.test(q)) return answer("I can open sections, add students step-by-step, save records, check student/fee counts, and export Excel.", command);
+    if (isPositive(command) && sessionStorage.getItem(LAST_SAVE_KEY) === "true") { sessionStorage.removeItem(LAST_SAVE_KEY); return answer("Ji Sir, student already successfully save ho gaya hai.", command); }
+    if (isPositive(command) && draft.id && draft.name && draft.gender && draft.totalFees && nextStudentField(draft) === null) return saveCurrentStudent(command);
+    if (/^(help|what can you do|commands)$/i.test(q)) return answer("I can open any section, add students step-by-step, save records, check student/fee counts, and export Excel.", command);
     if (/\b(export|download)\b.*\b(excel|report)\b|\bexcel\b.*\b(download|export)\b/i.test(command)) { try { await exportAcademyToExcel(getStudents(), { sections: getWorkspaceSections() }); answer("Excel report downloaded.", command); } catch { answer("Excel export failed. Use Export to Excel once.", command); } return; }
-    const route = findRoute(command); const studentMode = nextStudentField(draft) !== null;
-    if (route && !/\b(add|new|enroll)\s+student\b/i.test(command) && !studentMode) { await navigate({ to: route.to as never }); return answer(`${route.label} open kar diya.`, command); }
+    const route = findRoute(command);
+    if (route && !/\b(add|new|enroll)\s+student\b/i.test(command)) { await navigate({ to: route.to as never }); return answer(`${route.label} open kar diya. Agent open rahega.`, command); }
     if (/\b(add|new|enroll)\s+student\b/i.test(command)) { clearAgentDraft(); setDraft({}); await navigate({ to: "/add-student" }); return answer("Add Student open hai. Student ID kya hai?", command); }
     const expected = nextStudentField(draft); const parsed = parseExplicit(command, draft); let nextDraft = parsed.draft; let changed = parsed.changed;
     if (!changed.length) { const applied = applyExpected(command, expected, draft); nextDraft = applied.draft; changed = applied.changed; }
-    if (changed.length) { setDraft(nextDraft); writeDraft(nextDraft); await navigate({ to: "/add-student" }); const next = nextStudentField(nextDraft); if (!next) { sessionStorage.setItem("academy_hub_agent_save_requested_v1", "true"); window.dispatchEvent(new CustomEvent("academy-agent-save-student")); clearAgentDraft(); setDraft({}); return answer("All details complete. Student save kar raha hoon.", command); } return answer(`${changed.join(", ")} set. ${questionFor(next)}`, command); }
+    if (changed.length) { setDraft(nextDraft); writeDraft(nextDraft); await navigate({ to: "/add-student" }); const next = nextStudentField(nextDraft); if (!next) return saveCurrentStudent(command); return answer(`${changed.join(", ")} set. ${questionFor(next)}`, command); }
     if (/\b(how many|total|count)\b.*\bstudents?\b/i.test(command)) return answer(`Academy mein ${metrics.totalStudents} students hain.`, command);
     if (/\bpaid\s+students\b/i.test(command)) return answer(`${metrics.paidStudents} students fully paid hain.`, command);
     if (/\bpartial\s+students\b/i.test(command)) return answer(`${metrics.partialStudents} students partial payment par hain.`, command);
     if (/\b(unpaid|pending)\s+students\b/i.test(command)) return answer(`${metrics.pendingStudents} students ki payment pending hai.`, command);
-    if (/\b(save|save this student)\b/i.test(command)) { const current = readDraft(); const missing = nextStudentField(current); if (missing) return answer(`Abhi ${questionFor(missing)}`, command); sessionStorage.setItem("academy_hub_agent_save_requested_v1", "true"); window.dispatchEvent(new CustomEvent("academy-agent-save-student")); return answer("Student save kar raha hoon.", command); }
+    if (/\b(save|save this student)\b/i.test(command)) return saveCurrentStudent(command);
     return answer("Samajh gaya. Section ka naam ya student ki next detail bata dein.", command);
   }
   useEffect(() => { if (!listening) return; const stop = startAgentListening((text) => { setListening(false); void handleCommand(text); }, () => setListening(false)); return () => stop(); }, [listening]);
