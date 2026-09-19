@@ -282,55 +282,6 @@ The application provides:
 
 Because data is localStorage based, regular backups are strongly recommended.
 
-
-## Academy Hub Agent / Voice Output
-
-The project now includes a browser-based agent voice output layer.
-
-- Agent messages can be spoken aloud using the browser Speech Synthesis API.
-- Voice is enabled by default.
-- The top workspace header has a speaker button to turn agent voice on/off.
-- Voice preference is saved in localStorage.
-- Successful student actions currently announce confirmation aloud, including:
-  - Student added
-  - Student updated
-  - Payment recorded
-  - Student deleted
-- The voice layer is intentionally local/browser based and does not require an external AI API key.
-- Future agent commands can reuse speakAgentMessage() for spoken confirmations.
-
-
-### Agent commands currently supported
-
-The Academy Hub Agent is available as a floating Agent button in the authenticated workspace.
-
-It currently supports:
-- Opening Dashboard
-- Opening All Students
-- Opening Add Student
-- Opening Settings
-- Opening Male Students
-- Opening Female Students
-- Opening Morning Shift
-- Opening Evening Shift
-- Reporting total student count
-- Reporting fully paid student count
-- Reporting partial-payment student count
-- Reporting pending/unpaid student count
-- Reporting male student count
-- Reporting female student count
-- Speaking every agent response aloud when Agent Voice is enabled
-
-Examples:
-- `open students`
-- `add student`
-- `open settings`
-- `how many students?`
-- `how many paid students?`
-- `how many female students?`
-
-The agent is currently a local/browser command agent. It does not require an external AI API key. Future AI-powered commands can be added on top of this same interface without changing the localStorage data architecture.
-
 ## Local development
 
 Requirements:
