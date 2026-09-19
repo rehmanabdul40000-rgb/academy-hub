@@ -9,7 +9,7 @@ import { getUsers, updateUser } from "@/features/users/users.storage";
 
 export const Route = createFileRoute("/_authenticated/change-password")({ component: ChangePasswordPage });
 
-export default function ChangePasswordPage() {
+function ChangePasswordPage() {
   const session = getStoredAdminSession();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
