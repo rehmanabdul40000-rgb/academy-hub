@@ -21,7 +21,7 @@ function AddStudentPage() {
   useEffect(() => {
     const loadAgentDraft = () => {
       try {
-        const raw = sessionStorage.getItem("academy_hub_agent_student_draft_v1");
+        const raw = sessionStorage.getItem("academy_hub_agent_student_draft_v2");
         if (!raw) return;
         const draft = JSON.parse(raw) as { id?: string; name?: string; gender?: "Male" | "Female"; phone?: string; course?: string; shift?: "morning" | "evening"; dateJoined?: string; totalFees?: string; amountPaid?: string; notes?: string };
         if (draft.id) setStudentId(draft.id);
