@@ -13,7 +13,7 @@ const permissionLabels: Record<PermissionKey, string> = {
   dashboard: "View Dashboard", studentsView: "View Students", studentsSave: "Save Students", studentsEdit: "Edit Students", studentsDelete: "Delete Students", payments: "Collect / Manage Payments", reports: "Reports & Excel Export", shiftManagement: "Manage Shifts", userManagement: "Manage Users & Permissions", settings: "Workspace Settings",
 };
 
-export default function UsersPage() {
+function UsersPage() {
   const [users, setUsers] = useState<AcademyUser[]>(getUsers());
   const [userId, setUserId] = useState(""); const [displayName, setDisplayName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<"User" | "Manager">("User");
   const [permissions, setPermissions] = useState<UserPermissions>({ ...DEFAULT_PERMISSIONS }); const [message, setMessage] = useState("");
