@@ -9,7 +9,7 @@ import { getShifts, saveShifts, type AcademyShift } from "@/features/shifts/shif
 
 export const Route = createFileRoute("/_authenticated/shifts")({ beforeLoad: () => { if (!isWorkspaceSectionEnabled("shiftManagement") || !can("shiftManagement")) throw redirect({ to: "/dashboard" }); }, component: ShiftsPage });
 
-export default function ShiftsPage() {
+function ShiftsPage() {
   const [shifts, setShifts] = useState<AcademyShift[]>(getShifts());
   const [draftName, setDraftName] = useState("");
   const [draftFrom, setDraftFrom] = useState("");
