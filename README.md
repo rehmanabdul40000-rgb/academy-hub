@@ -295,6 +295,16 @@ The project now includes a browser-based agent voice output layer.
 - The voice layer is intentionally local/browser based and does not require an external AI API key.
 - Future agent commands can reuse speakAgentMessage() for spoken confirmations.
 
+
+### Agent commands currently supported
+
+The floating **Academy Hub Agent** can currently:
+- Open Dashboard, All Students, Add Student, Settings, Male Students, Female Students, Morning Shift, and Evening Shift.
+- Report total, paid, partial, pending/unpaid, male, and female student counts.
+- Speak its confirmation/reply aloud through the browser Speech Synthesis API when Agent Voice is enabled.
+
+The Agent button and Agent Voice toggle are part of the stable local/browser release. No external AI API key is required for this phase.
+
 ## Local development
 
 Requirements:
