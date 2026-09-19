@@ -46,9 +46,9 @@ function parseStudentCommand(command: string, current: StudentDraft): { draft: S
   const draft: StudentDraft = { ...current };
   const changed: string[] = [];
   const id = q.match(/(?:student\s*)?(?:id|i\.d\.)\s*[:#-]?\s*([\w-]+)/i);
-  const name = q.match(/(?:student\s*)?(?:full\s*)?name\s*(?:is|=|:)\s*(.+)$/i) || q.match(/^name\s+(.+)$/i);
+  const name = q.match(/(?:student\s*)?(?:full\s*)?name\s*(?:(?:is|=|:)\s*)?(.+)$/i);
   const gender = lower.match(/\b(male|female)\b/);
-  const phone = q.match(/(?:phone|whatsapp|contact)\s*(?:is|=|:)\s*([+\d][\d\s-]{6,})/i);
+  const phone = q.match(/(?:phone|whatsapp|contact)\s*(?:(?:is|=|:)\s*)?([+\d][\d\s-]{6,})/i);
   const course = q.match(/(?:course|class)\s*(?:is|=|:)\s*(.+)$/i) || q.match(/^course\s+(.+)$/i);
   const fees = q.match(/(?:total\s*)?(?:fees|fee)\s*(?:are|is|=|:)\s*([\d,]+(?:\.\d+)?)/i);
   const paid = q.match(/(?:amount\s*)?(?:paid|payment)\s*(?:is|=|:)\s*([\d,]+(?:\.\d+)?)/i);
