@@ -31,6 +31,8 @@ function reply(text: string): string {
   const students = getStudents();
   const metrics = calculateMetrics(students);
   if (!q) return "Sir, please tell me what you want me to do.";
+  if (/^(write|enter|fill)\s+(the\s+)?student\s+name$/i.test(q) || /^student\s+name$/i.test(q)) return "Ji Sir, student ka full name bata dein. Example: student name Ali Khan.";
+  if (/^(write|enter|fill)\s+(the\s+)?student\s+id$/i.test(q) || /^student\s+id$/i.test(q)) return "Ji Sir, Student ID bata dein. Example: student id 01.";
   if (q.includes("how many") || q.includes("total students") || q.includes("student count")) return `Sir, there are ${metrics.totalStudents} students in the academy records.`;
   if (q.includes("paid students")) return `Sir, ${metrics.paidStudents} students are fully paid.`;
   if (q.includes("partial students")) return `Sir, ${metrics.partialStudents} students have partial payments.`;
@@ -135,7 +137,9 @@ export function AcademyAgent() {
       } else {
         writeDraft(finalDraft);
         void navigate({ to: "/add-student" });
-        response = "Sir, form mein data load kar diya hai. Ab Save Student button press kar dein. Main automatic save nahi kar raha taake aap ki confirmation rahe.";
+        sessionStorage.setItem("academy_hub_agent_save_requested_v1", "true");
+        window.dispatchEvent(new CustomEvent("academy-agent-save-student"));
+        response = "Sir, complete student data form mein load kar diya hai aur Save Student action start kar diya hai.";
       }
     }
 
