@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getSettings } from "@/features/settings/settings.storage";
 import { getShiftById, formatShiftTime, getShifts, type AcademyShift } from "@/features/shifts/shifts.storage";
 import { addStudent, computeRemaining, computeStudentStatus, formatCurrency } from "@/features/students/students.storage";
+import { speakAgentMessage } from "@/features/agent/agent-voice";
 
 export const Route = createFileRoute("/_authenticated/add-student")({ beforeLoad: () => { if (!isWorkspaceSectionEnabled("addStudent") || !can("studentsSave")) throw redirect({ to: "/dashboard" }); }, head: () => ({ meta: [{ title: "Add Student — Academy Hub" }, { name: "description", content: "Enroll a new student in Academy Hub." }] }), component: AddStudentPage });
 const inputClass = "mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20";
@@ -23,7 +24,10 @@ function AddStudentPage() {
   function handleSave(addAnother = false) {
     setErrorMessage(""); setSuccessMessage(""); if (!studentId.trim()) return setErrorMessage("Student ID is required. Please choose and enter a unique Student ID."); if (!name.trim()) return setErrorMessage("Student Full Name is required."); if (totalFees.trim() === "" || isNaN(numTotal) || numTotal < 0) return setErrorMessage("Please enter a valid non-negative Total Fees amount."); if (numPaid < 0) return setErrorMessage("Amount Paid cannot be negative."); if (numPaid > numTotal) return setErrorMessage(`Amount Paid (${formatCurrency(numPaid)}) cannot be greater than Total Fees (${formatCurrency(numTotal)}).`);
     setIsSubmitting(true); const result = addStudent({ id: studentId.trim(), name: name.trim(), gender: gender || undefined, shift: shift === "morning" ? "Morning" : shift === "evening" ? "Evening" : undefined, shiftTime: shiftTime || undefined, phone: phone.trim() || undefined, course: course.trim() || undefined, dateJoined: dateJoined.trim() || undefined, totalFees: numTotal, amountPaid: numPaid, notes: notes.trim() || undefined }); setIsSubmitting(false);
-    if (!result.success) return setErrorMessage(result.error || "Failed to register student."); if (addAnother) { setSuccessMessage(`Student ${name.trim()} (${studentId.trim()}) successfully saved!`); resetForm(); window.scrollTo({ top: 0, behavior: "smooth" }); } else navigate({ to: "/students" });
+    if (!result.success) return setErrorMessage(result.error || "Failed to register student.");
+    const spokenMessage = `Sir, student ${name.trim()} has been added successfully.`;
+    speakAgentMessage(spokenMessage);
+    if (addAnother) { setSuccessMessage(`Student ${name.trim()} (${studentId.trim()}) successfully saved!`); resetForm(); window.scrollTo({ top: 0, behavior: "smooth" }); } else navigate({ to: "/students" });
   }
   return <AppShell title="Add Student" subtitle="Enroll a new student and establish their tuition fee structure." showAddStudent={false}><div className="mx-auto max-w-2xl"><div className="mb-4"><Button variant="ghost" size="sm" asChild className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Link to="/students"><ArrowLeft className="size-3.5" />Back to Students</Link></Button></div>{successMessage && <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400"><CheckCircle2 className="size-4" />{successMessage}</div>}{errorMessage && <div className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">{errorMessage}</div>}
   <form onSubmit={(e) => { e.preventDefault(); handleSave(false); }} className="rounded-xl border border-border bg-card p-6 shadow-sm">
