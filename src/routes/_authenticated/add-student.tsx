@@ -18,6 +18,37 @@ function AddStudentPage() {
   const [shifts, setShifts] = useState<AcademyShift[]>(getShifts());
   useEffect(() => { const settingsFn = () => setSettings(getSettings()); const shiftsFn = () => setShifts(getShifts()); window.addEventListener("academy-settings-updated", settingsFn); window.addEventListener("academy-shifts-updated", shiftsFn); return () => { window.removeEventListener("academy-settings-updated", settingsFn); window.removeEventListener("academy-shifts-updated", shiftsFn); }; }, []);
   const [studentId, setStudentId] = useState(""); const [name, setName] = useState(""); const [gender, setGender] = useState<"" | "Male" | "Female">(""); const [shift, setShift] = useState(""); const [shiftTime, setShiftTime] = useState(""); const [phone, setPhone] = useState(""); const [course, setCourse] = useState(""); const [dateJoined, setDateJoined] = useState(""); const [totalFees, setTotalFees] = useState(""); const [amountPaid, setAmountPaid] = useState(""); const [notes, setNotes] = useState(""); const [errorMessage, setErrorMessage] = useState(""); const [successMessage, setSuccessMessage] = useState(""); const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    const loadAgentDraft = () => {
+      try {
+        const raw = sessionStorage.getItem("academy_hub_agent_student_draft_v1");
+        if (!raw) return;
+        const draft = JSON.parse(raw) as { id?: string; name?: string; gender?: "Male" | "Female"; phone?: string; course?: string; shift?: "morning" | "evening"; dateJoined?: string; totalFees?: string; amountPaid?: string; notes?: string };
+        if (draft.id) setStudentId(draft.id);
+        if (draft.name) setName(draft.name);
+        if (draft.gender) setGender(draft.gender);
+        if (draft.phone) setPhone(draft.phone);
+        if (draft.course) setCourse(draft.course);
+        if (draft.dateJoined) setDateJoined(draft.dateJoined);
+        if (draft.totalFees) setTotalFees(draft.totalFees);
+        if (draft.amountPaid) setAmountPaid(draft.amountPaid);
+        if (draft.notes) setNotes(draft.notes);
+        if (draft.shift) {
+          const savedShift = getShifts().find((item) => item.active && (draft.shift === "morning" ? /morning/i.test(item.name) : /evening/i.test(item.name)));
+          if (savedShift) {
+            setShift(savedShift.id);
+            setShiftTime(formatShiftTime(savedShift));
+          }
+        }
+      } catch {
+        // Ignore an invalid agent draft and keep the normal blank form.
+      }
+    };
+    loadAgentDraft();
+    window.addEventListener("academy-agent-draft-updated", loadAgentDraft);
+    return () => window.removeEventListener("academy-agent-draft-updated", loadAgentDraft);
+  }, []);
+
   const numTotal = parseFloat(totalFees) || 0; const numPaid = parseFloat(amountPaid) || 0; const isOverpaid = numPaid > numTotal; const remaining = computeRemaining(numTotal, numPaid); const autoStatus = computeStudentStatus(numTotal, numPaid);
   function handleShiftChange(value: string) { setShift(value); const saved = getShiftById(value); setShiftTime(formatShiftTime(saved)); }
   function resetForm() { setStudentId(""); setName(""); setGender(""); setShift(""); setShiftTime(""); setPhone(""); setCourse(""); setDateJoined(""); setTotalFees(""); setAmountPaid(""); setNotes(""); setErrorMessage(""); }
@@ -25,6 +56,7 @@ function AddStudentPage() {
     setErrorMessage(""); setSuccessMessage(""); if (!studentId.trim()) return setErrorMessage("Student ID is required. Please choose and enter a unique Student ID."); if (!name.trim()) return setErrorMessage("Student Full Name is required."); if (totalFees.trim() === "" || isNaN(numTotal) || numTotal < 0) return setErrorMessage("Please enter a valid non-negative Total Fees amount."); if (numPaid < 0) return setErrorMessage("Amount Paid cannot be negative."); if (numPaid > numTotal) return setErrorMessage(`Amount Paid (${formatCurrency(numPaid)}) cannot be greater than Total Fees (${formatCurrency(numTotal)}).`);
     setIsSubmitting(true); const result = addStudent({ id: studentId.trim(), name: name.trim(), gender: gender || undefined, shift: shift === "morning" ? "Morning" : shift === "evening" ? "Evening" : undefined, shiftTime: shiftTime || undefined, phone: phone.trim() || undefined, course: course.trim() || undefined, dateJoined: dateJoined.trim() || undefined, totalFees: numTotal, amountPaid: numPaid, notes: notes.trim() || undefined }); setIsSubmitting(false);
     if (!result.success) return setErrorMessage(result.error || "Failed to register student.");
+    sessionStorage.removeItem("academy_hub_agent_student_draft_v1");
     const spokenMessage = `Sir, student ${name.trim()} has been added successfully.`;
     speakAgentMessage(spokenMessage);
     if (addAnother) { setSuccessMessage(`Student ${name.trim()} (${studentId.trim()}) successfully saved!`); resetForm(); window.scrollTo({ top: 0, behavior: "smooth" }); } else navigate({ to: "/students" });
