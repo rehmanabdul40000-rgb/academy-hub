@@ -282,6 +282,23 @@ The application provides:
 
 Because data is localStorage based, regular backups are strongly recommended.
 
+
+## Academy Hub Agent / Voice Output
+
+The project now includes a browser-based agent voice output layer.
+
+- Agent messages can be spoken aloud using the browser Speech Synthesis API.
+- Voice is enabled by default.
+- The top workspace header has a speaker button to turn agent voice on/off.
+- Voice preference is saved in localStorage.
+- Successful student actions currently announce confirmation aloud, including:
+  - Student added
+  - Student updated
+  - Payment recorded
+  - Student deleted
+- The voice layer is intentionally local/browser based and does not require an external AI API key.
+- Future agent commands can reuse speakAgentMessage() for spoken confirmations.
+
 ## Local development
 
 Requirements:
