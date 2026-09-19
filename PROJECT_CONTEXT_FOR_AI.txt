@@ -53,3 +53,36 @@ AI rules:
 - Test locally before production.
 - Never expose secrets.
 - Prefer small isolated commits.
+
+
+## Final Vercel deployment guide
+
+The stable release is browser/localStorage based. It does not use Supabase as its active data store.
+
+### Dashboard deployment
+1. Test locally first with `npm run build` and `npm run dev`.
+2. Push only tested code to GitHub `main`.
+3. Open Vercel and choose **Add New → Project**.
+4. Import `rehmanabdul40000-rgb/academy-hub`.
+5. Keep the repository root as the Root Directory (`./`).
+6. Do not convert the project to Next.js; keep the existing React/TanStack Start setup.
+7. If Vercel asks for a build command, use `npm run build`.
+8. Deploy and test the generated `*.vercel.app` URL.
+
+Vercel supports Vite/React deployments and GitHub-connected deployments. See the official Vercel Vite/React template: https://vercel.com/templates/template/vite-react
+
+### CLI deployment
+```bash
+npm run build
+npx vercel --prod
+```
+
+### Important
+- Do not add Supabase service-role/secret keys to Vercel for this stable localStorage release.
+- Localhost browser storage and Vercel browser storage are separate. Vercel is the live website, not a shared database.
+- If the Vercel project is already connected to this GitHub repository, pushing a tested commit to `main` can trigger a new deployment.
+
+
+## VS Code diagnostics
+- TanStack Router messages saying route exports will not be code-split are informational optimization warnings, not application failures.
+- The old local `.github/workflows/fix-student-finance-excel.yml` workflow is not part of the current stable GitHub release. If it exists only in a local checkout and creates hundreds of YAML/embedded-script diagnostics, delete that local file and do not recreate the experimental workflows.
