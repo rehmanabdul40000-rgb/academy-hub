@@ -61,6 +61,13 @@ function AddStudentPage() {
     speakAgentMessage(spokenMessage);
     if (addAnother) { setSuccessMessage(`Student ${name.trim()} (${studentId.trim()}) successfully saved!`); resetForm(); window.scrollTo({ top: 0, behavior: "smooth" }); } else navigate({ to: "/students" });
   }
+  useEffect(() => {
+    if (sessionStorage.getItem("academy_hub_agent_save_requested_v1") !== "true") return;
+    sessionStorage.removeItem("academy_hub_agent_save_requested_v1");
+    const timer = window.setTimeout(() => handleSave(false), 150);
+    return () => window.clearTimeout(timer);
+  }, [handleSave]);
+
   return <AppShell title="Add Student" subtitle="Enroll a new student and establish their tuition fee structure." showAddStudent={false}><div className="mx-auto max-w-2xl"><div className="mb-4"><Button variant="ghost" size="sm" asChild className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Link to="/students"><ArrowLeft className="size-3.5" />Back to Students</Link></Button></div>{successMessage && <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400"><CheckCircle2 className="size-4" />{successMessage}</div>}{errorMessage && <div className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">{errorMessage}</div>}
   <form onSubmit={(e) => { e.preventDefault(); handleSave(false); }} className="rounded-xl border border-border bg-card p-6 shadow-sm">
     <h2 className="font-display text-sm font-semibold tracking-wide text-cyan-400 uppercase">Student Identification</h2>
