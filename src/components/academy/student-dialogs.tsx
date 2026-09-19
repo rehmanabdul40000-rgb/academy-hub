@@ -32,6 +32,7 @@ import {
   updateStudent,
 } from "@/features/students/students.storage";
 import type { PaymentRecord, Student } from "@/types/student";
+import { speakAgentMessage } from "@/features/agent/agent-voice";
 
 // Quick Payment Modal
 export function QuickPaymentModal({
@@ -99,6 +100,7 @@ export function QuickPaymentModal({
     }
 
     onSuccess();
+    speakAgentMessage(`Sir, payment of ${formatCurrency(numAdded)} from ${student.name} has been recorded successfully.`);
     setLastPayment(res.payment || null);
     setAmountToAdd("");
   }
@@ -359,6 +361,7 @@ export function EditStudentModal({
     }
 
     onSuccess();
+    speakAgentMessage(`Sir, ${student.name} has been updated successfully.`);
     onClose();
   }
 
@@ -822,6 +825,7 @@ export function DeleteStudentDialog({
     if (!recoveryId) return;
     const result = confirmStudentDeletion(recoveryId);
     if (!result.success) return;
+    speakAgentMessage(`Sir, ${student.name} has been deleted successfully.`);
     onSuccess();
     onClose();
   }
