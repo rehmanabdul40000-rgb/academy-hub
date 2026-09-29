@@ -7,11 +7,9 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { clearAdminSession } from "@/features/auth/auth.session";
-import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -124,28 +122,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
-
-  useEffect(() => {
-    const clearTemporarySession = () => clearAdminSession();
-    window.addEventListener("pagehide", clearTemporarySession);
-    window.addEventListener("beforeunload", clearTemporarySession);
-
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-    });
-    return () => {
-      window.removeEventListener("pagehide", clearTemporarySession);
-      window.removeEventListener("beforeunload", clearTemporarySession);
-      data.subscription.unsubscribe();
-    };
-  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
   );
