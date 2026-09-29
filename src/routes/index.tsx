@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { getStoredAdminSession } from "@/features/auth/auth.session";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,9 +24,7 @@ function EntryRoute() {
       navigate({ to: "/dashboard", replace: true });
       return;
     }
-    supabase.auth.getUser().then(({ data }) => {
-      navigate({ to: data.user ? "/dashboard" : "/login", replace: true });
-    });
+    navigate({ to: "/login", replace: true });
   }, [navigate]);
   return (
     <main className="dark grid min-h-dvh place-items-center bg-background">
