@@ -1,0 +1,352 @@
+ACADEMY HUB — PROJECT HANDOFF / AI CONTEXT
+===============================================
+
+Repository
+----------
+GitHub:
+https://github.com/rehmanabdul40000-rgb/academy-hub
+
+Only this repository is the Academy Hub project.
+DO NOT modify the old "tuition-tide-pro" repository.
+
+Current status
+--------------
+This is the stable LOCAL-STORAGE version of Academy Hub.
+
+The experimental Supabase / PostgreSQL / scalable database / multi-user migration has been removed from the active project.
+
+IMPORTANT:
+- Do not re-add Supabase/scalable database code unless the owner explicitly asks for a future database migration.
+- The application currently stores students, payments, settings, users/permissions, deleted records and workspace preferences in browser localStorage.
+- Localhost and Vercel do NOT share data in this architecture. Each browser/device has its own localStorage.
+- This is intentional for the current stable version.
+
+Technology
+----------
+- React
+- TypeScript
+- TanStack Start
+- TanStack Router
+- Vite
+- Tailwind CSS
+- shadcn-style UI components
+- Lucide React
+- ExcelJS
+- Zod
+- Browser localStorage
+
+Local development
+-----------------
+Project folder used by the owner:
+C:\Users\admin\Downloads\academy-hub-main\academy-hub-main
+
+Commands:
+  npm install
+  npm run dev
+
+Open:
+  http://localhost:3000
+
+If the local Git branch becomes confused or contains old experimental work, the safe way to return to the current GitHub version is:
+
+  git fetch origin
+  git reset --hard origin/main
+
+Then:
+  npm install
+  npm run dev
+
+The reset changes code only. It does NOT delete browser localStorage data.
+
+If "git status" still shows obsolete untracked experimental files after the reset, inspect them before deleting anything. Do not blindly delete .env.local.
+
+Admin login
+-----------
+Initial admin username:
+  admin
+
+Initial password:
+  123
+
+The password can be changed from the Change Password / Settings workflow.
+Never place real passwords, secret keys, database passwords, API secrets, or tokens in this file.
+
+Main application features
+-------------------------
+1. Dashboard
+   - Dynamic greeting by local time.
+   - Current time.
+   - Admin display name.
+   - Total student statistics.
+   - Fee collection summary.
+   - Paid / Partial / Pending information.
+   - Outstanding fees.
+   - Recent students.
+   - Gender summary.
+   - Quick payment collection.
+   - Saved At information.
+
+2. Students
+   - All Students.
+   - Add Student.
+   - View student.
+   - Edit student.
+   - Delete student.
+   - Recently Deleted / Restore.
+   - Search.
+   - Status filtering.
+   - Gender filtering.
+   - Date Joined.
+   - Total Fees.
+   - Amount Paid.
+   - Remaining Fees.
+   - Automatic payment status.
+   - Notes.
+   - Saved At.
+
+3. Student fields
+   - Student ID (manual).
+   - Full Name.
+   - Gender (required: Male/Female).
+   - Phone (optional).
+   - Course/Class (optional).
+   - Date Joined (optional).
+   - Shift (optional; blank is allowed).
+   - Class Time (auto-filled from shift but editable).
+   - Total Fees.
+   - Amount Paid at Enrollment (optional; can be blank).
+   - Remaining.
+   - Payment Status.
+   - Notes.
+   - Saved At.
+
+4. Student segment sections
+   Keep all four:
+   - Male Students
+   - Female Students
+   - Morning Shift
+   - Evening Shift
+
+   These sections must not be removed.
+   Their student actions should remain consistent with All Students.
+
+5. Shift Management
+   - Morning Shift.
+   - Evening Shift.
+   - Shift name.
+   - From / To timing.
+   - Student shift assignment.
+   - Automatic class-time assignment.
+   - Class Time remains editable.
+   - Student Shift can be blank.
+   - Student form dropdown is intentionally limited to Morning Shift and Evening Shift.
+
+6. Fee management
+   - Collect Payment.
+   - Payment validation.
+   - Remaining calculation.
+   - Paid / Partial / Pending status.
+   - Payment history.
+   - Receipt / print.
+   - Outstanding students.
+   - Fee reports.
+   - Duplicate-submit protection.
+
+7. Excel
+   Export includes:
+   - Students
+   - Fee Summary
+   - Fee Analytics
+   - Payment History
+   - Male Students
+   - Female Students
+   - Professional formatting.
+   - Academy name.
+   - Academic session.
+   - Admin display name.
+   - Currency.
+   - Generated date/time.
+   - Student totals.
+   - Gender immediately after Student ID.
+   - Centered / middle aligned content.
+   - Course names should stay readable without unnecessary wrapping.
+   - Section-aware export.
+
+   Settings also supports Excel/CSV student import.
+
+8. Settings
+   - Academy / Institution Name.
+   - Academic Session / Year.
+   - Currency Symbol / Label.
+   - Contact Phone / WhatsApp.
+   - Contact Email.
+   - Campus / Academy Address.
+   - Admin Display Name.
+   - Admin Username.
+   - Admin Password.
+   - Save Workspace Settings.
+   - Data Management & Excel Backup.
+   - Workspace Backup & Restore.
+   - Recently Deleted / Restore.
+   - Import Students.
+   - Workspace section enable/disable controls.
+   - Dark / Light theme selection.
+
+   Settings persist through localStorage.
+   Password is hidden by default and has an eye icon for show/hide.
+
+9. Users & Permissions
+   Permission categories:
+   - Students View
+   - Students Create
+   - Students Edit
+   - Students Delete
+   - Payments
+   - Reports
+   - Shift Management
+   - User Management
+   - Settings
+
+   Admin has full access.
+
+10. Change Password
+    - Available in the sidebar.
+    - Updates the admin password through the local settings/auth flow.
+
+Theme
+-----
+The finalized theme work is retained.
+
+The "Light" option intentionally uses a dark charcoal/slate visual palette.
+The "Dark" option remains available.
+
+Top header has quick theme buttons.
+
+Theme requirements:
+- Keep text readable.
+- Keep cards and inputs readable.
+- Keep borders visible.
+- Keep active navigation clear.
+- Do not replace the finalized theme with a white/cream/low-contrast design unless explicitly requested.
+
+Vercel deployment
+-----------------
+Live/demo deployment target:
+https://academy-hub-orpin.vercel.app
+
+Recommended deployment method:
+1. Make sure local code is the clean current GitHub version.
+2. Test localhost first.
+3. Commit/push the final code to main.
+4. Open Vercel.
+5. Open the existing Academy Hub project, or choose Add New -> Project.
+6. Import:
+   rehmanabdul40000-rgb/academy-hub
+7. Let Vercel detect the Vite/React/TanStack project.
+8. Project root: repository root.
+9. Build command:
+   npm run build
+10. Deploy.
+
+If the Vercel project is already connected to GitHub:
+  git add .
+  git commit -m "update Academy Hub"
+  git push origin main
+
+Vercel will normally create a new deployment automatically after the push.
+
+Environment variables
+---------------------
+The current stable localStorage architecture does not require Supabase variables.
+
+Do NOT add:
+- VITE_SUPABASE_URL
+- VITE_SUPABASE_PUBLISHABLE_KEY
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+
+unless the owner explicitly starts a new database migration project.
+
+If initial admin provisioning uses:
+  VITE_DEFAULT_ADMIN_PASSWORD
+
+then configure that variable in Vercel Project Settings -> Environment Variables and redeploy after changing it.
+
+Data warning
+------------
+Because the stable version uses browser localStorage:
+- Localhost data stays in that browser/profile.
+- Vercel data stays in the browser/profile used on the live site.
+- A second computer does not automatically see the first computer's students.
+- Vercel does not turn localStorage into a shared database.
+- This limitation is intentional in the current stable release.
+
+Current cleanup decision
+------------------------
+The large scalable/Supabase experiment was removed because it caused connection/session/migration problems and was not part of the requested stable localStorage version.
+
+Do not reintroduce it casually.
+
+Git safety
+----------
+Use only:
+  rehmanabdul40000-rgb/academy-hub
+
+Avoid:
+- destructive history rewrites,
+- force-pushing main,
+- editing unrelated repositories,
+- re-running old experimental GitHub Actions workflows,
+- committing secrets.
+
+The old experimental workflow files are not part of the clean current main branch.
+
+Testing checklist before Vercel
+-------------------------------
+- Login works.
+- Dashboard opens.
+- Add Student works.
+- Edit Student works.
+- Delete works.
+- Recently Deleted / Restore works.
+- Search works.
+- Male Students works.
+- Female Students works.
+- Morning Shift works.
+- Evening Shift works.
+- Shift Management works.
+- Collect Payment works.
+- Remaining fee calculation works.
+- Payment status works.
+- Receipt/print works.
+- Excel export works.
+- Excel/CSV import works.
+- Settings save and survive refresh.
+- Admin display name updates greeting/profile/receipts/export.
+- Password show/hide works.
+- Change Password works.
+- Users & Permissions works.
+- Dark theme works.
+- Light theme works.
+- Quick theme buttons work.
+- Workspace section enable/disable works.
+- No Supabase connection requirement appears.
+- No secret keys are exposed.
+
+Handoff rule for future AI
+--------------------------
+Treat this file and README.md as the project handoff.
+
+If the owner asks for a feature:
+1. Preserve the existing localStorage architecture unless a database migration is explicitly requested.
+2. Preserve all four student segment sections.
+3. Preserve fee/payment/receipt/export/import/settings functionality.
+4. Keep optional fields optional.
+5. Keep Shift limited to Morning Shift and Evening Shift.
+6. Keep blank Shift allowed.
+7. Keep Class Time auto-assigned but editable.
+8. Keep Admin Display Name synchronized across greeting/profile/receipts/Excel.
+9. Keep passwords hidden by default.
+10. Do not expose secrets.
+11. Test localhost before production.
+12. Make small isolated changes.
