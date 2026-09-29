@@ -1,0 +1,73 @@
+ACADEMY HUB — AI HANDOFF / PROJECT CONTEXT
+
+Repository: rehmanabdul40000-rgb/academy-hub
+Branch: main
+Deployment: Vercel
+Old repo tuition-tide-pro: NEVER modify it.
+
+CURRENT ARCHITECTURE
+- Stable version uses browser localStorage.
+- Supabase/PostgreSQL/scalable-database code has been removed from the active project.
+- Netlify tooling/plugin has been removed.
+- Do not reintroduce Supabase, cloud sync, PostgreSQL, scalable database, or Netlify unless the user explicitly asks for a future migration.
+- Localhost and Vercel have separate browser localStorage data by design.
+
+FEATURES
+- Dashboard with time-based greeting, current time, student statistics, fee summary, outstanding fees, recent students and gender summary.
+- Students: add, view, edit, delete, restore, search, filters, saved-at timestamp.
+- Student fields: ID, name, gender, phone, course/class, date joined, shift, class time, total fees, enrollment payment, remaining, status, notes, saved at.
+- Optional fields can stay blank.
+- Gender is required: Male/Female.
+- Separate Male Students and Female Students sections.
+- Separate Morning Shift and Evening Shift sections.
+- Shift Management.
+- Shift dropdown is limited to Morning Shift and Evening Shift; blank shift is allowed.
+- Class Time auto-populates from shift and remains editable.
+- Fees: collect payment, remaining calculation, Paid/Partial/Unpaid status, payment history, receipt/print, outstanding fees and duplicate-submit protection.
+- Excel: overall export plus Students, Fee Summary, Fee Analytics, Payment History, Male Students and Female Students sheets.
+- Excel/CSV student import.
+- Settings: academy name, session, currency, contact details, address, admin display name, username, password, backup/restore, deleted-record recovery, import, workspace section enable/disable and theme.
+- Admin password hidden by default with eye show/hide.
+- Users & Permissions.
+- Change Password.
+- Admin display name is used in greeting/profile/receipts/Excel.
+- Dark theme and Light theme. Light theme is intentionally charcoal/dark-slate, not white/cream.
+- Quick theme buttons in top header.
+
+AUTHENTICATION
+- Local/browser authentication.
+- Initial username: admin.
+- Initial password: 123 when VITE_DEFAULT_ADMIN_PASSWORD=123 is used.
+- Admin credentials can be changed from Settings/Change Password.
+- Session is stored in localStorage.
+- No cloud authentication.
+
+DEVELOPMENT
+1. npm install
+2. npm run dev
+3. Open http://localhost:3000
+4. Test locally before deployment.
+
+IF DEPENDENCIES LOOK STALE
+- Stop the dev server.
+- Delete node_modules.
+- Run npm install.
+- Run npm run dev again.
+- Do not install or add Netlify packages.
+
+VERCEL
+- Import/connect GitHub repo rehmanabdul40000-rgb/academy-hub.
+- Vercel can auto-detect the Vite/React/TanStack project.
+- Build command: npm run build.
+- No Netlify settings or plugin are needed.
+- If using VITE_DEFAULT_ADMIN_PASSWORD, add it in Vercel Project Settings > Environment Variables.
+- Redeploy after changing environment variables.
+- localStorage means localhost data does not automatically appear on Vercel.
+
+DESIGN RULES
+- Preserve the finalized charcoal/dark-slate theme.
+- Preserve all four segment sections.
+- Preserve student, payment, Excel, settings, permissions and backup functionality.
+- Do not expose secrets.
+- Prefer small isolated changes.
+- Test locally before production.
