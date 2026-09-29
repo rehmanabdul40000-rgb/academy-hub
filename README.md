@@ -2,6 +2,8 @@
 
 Academy Hub is a React + TanStack Start student and fee management system designed for small academies, tuition centers, and educational institutes.
 
+> **Current stable version:** browser/localStorage based. The experimental Supabase/PostgreSQL scalable-data work has been removed from the active application, and Netlify tooling has been removed. Vercel is the deployment target.
+
 The current production architecture is intentionally **local/browser storage based**. The later experimental scalable/Supabase database layer was removed so the project stays on the stable local-storage version.
 
 ## Important project identity
@@ -302,15 +304,20 @@ Academy Hub is suitable for Vercel deployment as a React/Vite/TanStack applicati
 
 1. Push the latest code to the `main` branch.
 2. Open Vercel.
-3. Select **Add New → Project**.
+3. Select **Add New → Project** (or open the existing Academy Hub Vercel project).
 4. Import the GitHub repository:
    `rehmanabdul40000-rgb/academy-hub`
 5. Let Vercel detect the framework.
 6. Keep the repository root as the project root.
 7. Use the repository's normal build settings unless Vercel asks for an override.
-8. Click **Deploy**.
+8. Build command: `npm run build`.
+9. Click **Deploy**.
 
 Vercel's Git integration can automatically deploy pushes to the connected production branch and can create preview deployments for branches/PRs.
+
+### Environment variables
+
+The stable localStorage version does not require Supabase variables. If you want the initial admin password to be provisioned from an environment variable, add `VITE_DEFAULT_ADMIN_PASSWORD` in Vercel Project Settings → Environment Variables. Redeploy after changing environment variables.
 
 ### For this repository
 
