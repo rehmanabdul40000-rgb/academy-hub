@@ -15,7 +15,6 @@ export interface MonthlyFeeRecord {
 
 export interface PaymentRecord {
   id: string;
-  studentId: string;
   studentName: string;
   amount: number;
   paymentDate: string;
@@ -31,7 +30,6 @@ export interface PaymentRecord {
 }
 
 export interface Student {
-  id: string;
   name: string;
   fatherName?: string;
   gender: StudentGender;
@@ -39,6 +37,7 @@ export interface Student {
   shiftTime?: string;
   phone?: string;
   phone2?: string;
+  bankName?: string;
   bankAccountName?: string;
   bankAccountNumber?: string;
   course?: string;
@@ -61,7 +60,6 @@ export interface Student {
 }
 
 export type NewStudentInput = {
-  id?: string;
   name: string;
   fatherName?: string;
   gender?: StudentGender;
