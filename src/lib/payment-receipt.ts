@@ -45,7 +45,7 @@ export function printPaymentReceipt(student: Student, payment: PaymentRecord): v
     lastDate: "",
     lateFee: "0",
     note: payment.note || (monthLabel ? `${monthLabel} fee payment` : ""),
-    status: payment.newRemaining === 0 ? "Paid" : "Outstanding",
+    status: payment.newRemaining === 0 ? "Paid" : payment.amount > 0 ? "Partial" : "Pending",
   };
 
   receiptWindow.document.write(`<!doctype html>
