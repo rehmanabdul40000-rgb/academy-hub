@@ -1,7 +1,7 @@
 import { formatCurrencyWithLabel, getSettings } from "@/features/settings/settings.storage";
 import type { FeeMetrics, MonthlyFeeRecord, NewStudentInput, PaymentRecord, PaymentStatus, Student } from "@/types/student";
 
-const STORAGE_KEY = "academy_hub_students_v3";
+const STORAGE_KEY = "academy_hub_students_v4_fresh";
 
 export function computeRemaining(totalFees: number, amountPaid: number): number {
   return Math.max(0, Number(totalFees || 0) - Number(amountPaid || 0));
