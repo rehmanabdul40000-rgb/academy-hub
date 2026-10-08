@@ -152,7 +152,7 @@ function AddStudentPage() {
             <div><p className="text-muted-foreground">Initial Remaining</p><p className="mt-1 font-mono font-bold">{formatCurrency(remaining)}</p></div>
             <div><p className="text-muted-foreground">Status</p><p className="mt-1 font-bold">{autoStatus}</p></div>
           </div>
-          <p className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-950/10 p-3 text-[11px] text-muted-foreground">The system keeps the admission fee as a one-time charge and prepares a separate 12-month fee schedule for this student. Future months stay hidden until their month arrives.</p>
+          <p className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-950/10 p-3 text-[11px] text-muted-foreground">The system keeps a separate 12-month fee schedule for this student. Future months stay hidden until their month arrives.</p>
 
           <hr className="my-6 border-border" />
           <label className="text-xs font-medium">Notes &amp; Remarks <span className="text-muted-foreground">(Optional)</span></label>
