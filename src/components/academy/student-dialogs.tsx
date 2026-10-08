@@ -92,7 +92,7 @@ export function QuickPaymentModal({
     }
 
     setIsSavingPayment(true);
-    const res = recordQuickPayment(student!.id, numAdded);
+    const res = recordQuickPayment(student!.createdAt, numAdded);
     setIsSavingPayment(false);
     if (!res.success) {
       setError(res.error || "Failed to record payment.");
@@ -294,6 +294,9 @@ export function EditStudentModal({
   const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");
   const [phone, setPhone] = useState("");
   const [phone2, setPhone2] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
   const [admissionFee, setAdmissionFee] = useState("");
@@ -309,6 +312,9 @@ export function EditStudentModal({
       setGender(student.gender || "Unspecified");
       setPhone(student.phone || "");
       setPhone2(student.phone2 || "");
+      setBankName(student.bankName || "");
+      setBankAccountName(student.bankAccountName || "");
+      setBankAccountNumber(student.bankAccountNumber || "");
       setCourse(student.course || "");
       setDateJoined(student.dateJoined || "");
       setAdmissionFee(student.admissionFee?.toString() || "0");
@@ -351,12 +357,15 @@ export function EditStudentModal({
       return;
     }
 
-    const res = updateStudent(student!.id, {
+    const res = updateStudent(student!.createdAt, {
       name: name.trim(),
       fatherName: fatherName.trim() || undefined,
       gender,
       phone: phone.trim() || undefined,
       phone2: phone2.trim() || undefined,
+      bankName: bankName.trim() || undefined,
+      bankAccountName: bankAccountName.trim() || undefined,
+      bankAccountNumber: bankAccountNumber.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
       admissionFee: numAdmission,
@@ -389,7 +398,7 @@ export function EditStudentModal({
             </span>
             <div>
               <h3 className="font-display font-semibold text-foreground">Edit Student Record</h3>
-              <p className="text-xs text-muted-foreground">ID: {student.id}</p>
+
             </div>
           </div>
           <button
@@ -433,6 +442,21 @@ export function EditStudentModal({
             <div>
               <label className="text-xs font-medium text-foreground">Contact No. 2</label>
               <input type="tel" value={phone2} onChange={(e) => setPhone2(e.target.value)} placeholder="0312-7654321" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="text-xs font-medium text-foreground">Bank Name</label>
+              <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Meezan Bank" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Account Name / Title</label>
+              <input type="text" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} placeholder="Account holder name" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Account Number</label>
+              <input type="text" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} placeholder="Account number" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
             </div>
           </div>
 
@@ -635,8 +659,16 @@ export function ViewStudentModal({
               <p className="mt-0.5 font-medium text-foreground">{student.fatherName || "Not specified"}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Bank Account</p>
-              <p className="mt-0.5 font-medium text-foreground">{student.bankAccountName || "Not specified"}{student.bankAccountNumber ? ` · ${student.bankAccountNumber}` : ""}</p>
+              <p className="text-muted-foreground">Bank Name</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.bankName || "Not specified"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Account Name / Title</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.bankAccountName || "Not specified"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Account Number</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.bankAccountNumber || "Not specified"}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Course / Class</p>
