@@ -20,8 +20,9 @@ function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, 
   const normalized = new Map<string, string>();
   cells.forEach((value, index) => normalized.set(String(index), value));
   const aliases: Record<string, string[]> = {
-    id: ["studentid", "id", "studentnumber", "registrationno", "rollno"],
     fatherName: ["fathername", "father", "fatherfullname"],
+    bankName: ["bankname", "bank"],
+    bankAccountName: ["bankaccountname", "accountname", "accounttitle", "accountname/title"],
     phone2: ["phone2", "contact2", "secondcontact", "alternatephone", "alternatecontact"],
     admissionFee: ["admissionfee", "admission", "admissioncharges"],
     monthlyFee: ["monthlyfee", "monthly", "monthlycharges"],
@@ -45,7 +46,6 @@ function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, 
     }
     return "";
   };
-  const id = get("id") || undefined;
   const name = get("name");
   if (!name) return { error: `Row ${rowNumber}: Student Name is required.` };
   const admissionFee = Number(get("admissionFee") || 0);
@@ -60,7 +60,7 @@ function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, 
   const shiftRaw = get("shift").toLowerCase();
   const gender: StudentGender | undefined = genderRaw === "male" ? "Male" : genderRaw === "female" ? "Female" : undefined;
   const shift: StudentShift | undefined = shiftRaw.includes("morning") ? "Morning" : shiftRaw.includes("evening") ? "Evening" : undefined;
-  return { row: { id, name, fatherName: get("fatherName") || undefined, gender, phone: get("phone") || undefined, phone2: get("phone2") || undefined, course: get("course") || undefined, dateJoined: get("dateJoined") || undefined, shift, shiftTime: get("shiftTime") || undefined, admissionFee, monthlyFee, totalFees, amountPaid, notes: get("notes") || undefined } };
+  return { row: { name, fatherName: get("fatherName") || undefined, bankName: get("bankName") || undefined, bankAccountName: get("bankAccountName") || undefined, gender, phone: get("phone") || undefined, phone2: get("phone2") || undefined, course: get("course") || undefined, dateJoined: get("dateJoined") || undefined, shift, shiftTime: get("shiftTime") || undefined, admissionFee, monthlyFee, totalFees, amountPaid, notes: get("notes") || undefined } };
 }
 
 export async function parseStudentImportFile(file: File): Promise<StudentImportResult> {
