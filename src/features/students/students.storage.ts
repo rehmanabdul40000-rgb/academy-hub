@@ -15,13 +15,6 @@ export function computeStudentStatus(totalFees: number, amountPaid: number): Pay
   return "Partial";
 }
 
-function makeInternalId(): string {
-  const uuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `ah-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `AH-${uuid}`;
-}
-
 function monthKeyFromDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -58,7 +51,7 @@ function buildMonthlySchedule(monthlyFee: number, dateJoined?: string, existing?
   const joined = dateJoined ? new Date(dateJoined) : now;
   const start = Number.isNaN(joined.getTime()) ? now : joined;
   let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const end = new Date(start.getFullYear(), start.getMonth() + 11, 1);
   const records: MonthlyFeeRecord[] = [];
   while (cursor <= end && records.length < 36) {
     const key = monthKeyFromDate(cursor);
@@ -66,38 +59,35 @@ function buildMonthlySchedule(monthlyFee: number, dateJoined?: string, existing?
     records.push(createMonthlyRecord(key, monthlyFee, old));
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
-  const nextKey = monthKeyFromDate(new Date(now.getFullYear(), now.getMonth() + 1, 1));
-  if (!records.some((item) => item.monthKey === nextKey)) {
-    const old = existing?.find((item) => item.monthKey === nextKey);
-    records.push(createMonthlyRecord(nextKey, monthlyFee, old));
-  }
   return records;
 }
 
 function normalizeStudent(raw: Student): Student {
-  const admissionFee = Math.max(0, Number(raw.admissionFee ?? 0));
-  const monthlyFee = Math.max(0, Number(raw.monthlyFee ?? (raw.admissionFee === undefined ? raw.totalFees : 0)));
-  const amountPaid = Math.max(0, Number(raw.amountPaid || 0));
-  const totalFees = Number(raw.totalFees ?? (admissionFee + monthlyFee)) || 0;
-  const monthlyFees = buildMonthlySchedule(monthlyFee, raw.dateJoined, raw.monthlyFees);
+  const legacy = raw as Student & { id?: string };
+  const { id: _legacyId, ...cleanRaw } = legacy;
+  const admissionFee = Math.max(0, Number(cleanRaw.admissionFee ?? 0));
+  const monthlyFee = Math.max(0, Number(cleanRaw.monthlyFee ?? (cleanRaw.admissionFee === undefined ? cleanRaw.totalFees : 0)));
+  const amountPaid = Math.max(0, Number(cleanRaw.amountPaid || 0));
+  const totalFees = Number(cleanRaw.totalFees ?? (admissionFee + monthlyFee)) || 0;
+  const monthlyFees = buildMonthlySchedule(monthlyFee, cleanRaw.dateJoined, cleanRaw.monthlyFees);
   return {
-    ...raw,
-    id: String(raw.id || makeInternalId()),
-    name: String(raw.name || "").trim(),
-    fatherName: raw.fatherName?.trim() || undefined,
-    phone: raw.phone?.trim() || undefined,
-    phone2: raw.phone2?.trim() || undefined,
-    bankAccountName: raw.bankAccountName?.trim() || undefined,
-    bankAccountNumber: raw.bankAccountNumber?.trim() || undefined,
+    ...cleanRaw,
+    name: String(cleanRaw.name || "").trim(),
+    fatherName: cleanRaw.fatherName?.trim() || undefined,
+    phone: cleanRaw.phone?.trim() || undefined,
+    phone2: cleanRaw.phone2?.trim() || undefined,
+    bankName: cleanRaw.bankName?.trim() || undefined,
+    bankAccountName: cleanRaw.bankAccountName?.trim() || undefined,
+    bankAccountNumber: cleanRaw.bankAccountNumber?.trim() || undefined,
     admissionFee,
-    admissionPaid: Math.min(admissionFee, Math.max(0, Number(raw.admissionPaid ?? Math.min(admissionFee, amountPaid)))),
+    admissionPaid: Math.min(admissionFee, Math.max(0, Number(cleanRaw.admissionPaid ?? Math.min(admissionFee, amountPaid)))),
     monthlyFee,
     totalFees,
     amountPaid,
     remainingFees: computeRemaining(totalFees, amountPaid),
     status: computeStudentStatus(totalFees, amountPaid),
     monthlyFees,
-    payments: raw.payments || undefined,
+    payments: cleanRaw.payments || undefined,
   };
 }
 
@@ -148,15 +138,18 @@ export function getPaymentHistory(student: Student): PaymentRecord[] {
 }
 
 export function getMonthlyFeeHistory(student: Student): MonthlyFeeRecord[] {
-  return buildMonthlySchedule(student.monthlyFee, student.dateJoined, student.monthlyFees).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  const currentKey = monthKeyFromDate(new Date());
+  return buildMonthlySchedule(student.monthlyFee, student.dateJoined, student.monthlyFees)
+    .filter((item) => item.monthKey <= currentKey)
+    .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 }
 
 export function getOutstandingMonthlyAmount(student: Student): number {
   return getMonthlyFeeHistory(student).reduce((sum, item) => sum + item.remainingAmount, 0);
 }
 
-export function getStudentById(id: string): Student | undefined {
-  return getStudents().find((s) => s.id.trim().toLowerCase() === id.trim().toLowerCase());
+export function getStudentById(recordKey: string): Student | undefined {
+  return getStudents().find((s) => s.createdAt === recordKey);
 }
 
 function allocatePayment(student: Student, amount: number): { admissionPaid: number; monthlyFees: MonthlyFeeRecord[] } {
@@ -196,7 +189,7 @@ export function bulkAddStudents(inputs: NewStudentInput[]): { success: boolean; 
       students.push(result.student);
     }
   }
-  return { success: errors.length === 0, imported: students.length, skipped: inputs.length - students.length, errors, students: students.length ? getStudents().filter((s) => !all.some((old) => old.id === s.id)) : [] };
+  return { success: errors.length === 0, imported: students.length, skipped: inputs.length - students.length, errors, students };
 }
 
 export function addStudent(input: NewStudentInput): { success: boolean; error?: string; student?: Student } {
@@ -209,8 +202,6 @@ export function addStudent(input: NewStudentInput): { success: boolean; error?: 
   if (!Number.isFinite(totalFees) || totalFees < 0) return { success: false, error: "Total Fees must be a valid non-negative number." };
   if (amountPaid > admissionFee + monthlyFee) return { success: false, error: "Amount Paid cannot be greater than Admission Fee + first Monthly Fee." };
   const all = getStudents();
-  const id = (input.id || "").trim() || makeInternalId();
-  if (all.some((s) => s.id.toLowerCase() === id.toLowerCase())) return { success: false, error: "A student with this internal record already exists." };
   const nowDate = new Date();
   const nowIso = nowDate.toISOString();
   const dateAddedFormatted = nowDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -229,7 +220,6 @@ export function addStudent(input: NewStudentInput): { success: boolean; error?: 
   });
   const enrollmentPayment: PaymentRecord | undefined = amountPaid > 0 ? {
     id: `PAY-ENROLL-${nowDate.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
-    studentId: id,
     studentName: name,
     amount: amountPaid,
     paymentDate: dateAddedFormatted,
@@ -244,7 +234,6 @@ export function addStudent(input: NewStudentInput): { success: boolean; error?: 
     monthKey: monthlyFees[0]?.monthKey,
   } : undefined;
   const newRecord: Student = normalizeStudent({
-    id,
     name,
     fatherName: input.fatherName?.trim() || undefined,
     gender: input.gender === "Male" || input.gender === "Female" ? input.gender : "Unspecified",
@@ -252,6 +241,7 @@ export function addStudent(input: NewStudentInput): { success: boolean; error?: 
     shiftTime: input.shiftTime?.trim() || undefined,
     phone: input.phone?.trim() || undefined,
     phone2: input.phone2?.trim() || undefined,
+    bankName: input.bankName?.trim() || undefined,
     bankAccountName: input.bankAccountName?.trim() || undefined,
     bankAccountNumber: input.bankAccountNumber?.trim() || undefined,
     course: input.course?.trim() || undefined,
@@ -276,9 +266,9 @@ export function addStudent(input: NewStudentInput): { success: boolean; error?: 
   return { success: true, student: newRecord };
 }
 
-export function updateStudent(id: string, updates: Partial<NewStudentInput>): { success: boolean; error?: string; student?: Student } {
+export function updateStudent(recordKey: string, updates: Partial<NewStudentInput>): { success: boolean; error?: string; student?: Student } {
   const all = getStudents();
-  const index = all.findIndex((s) => s.id.trim().toLowerCase() === id.trim().toLowerCase());
+  const index = all.findIndex((s) => s.createdAt === recordKey);
   if (index === -1) return { success: false, error: "Student not found." };
   const existing = all[index]!;
   const admissionFee = updates.admissionFee !== undefined ? Math.max(0, Number(updates.admissionFee)) : existing.admissionFee;
@@ -288,7 +278,6 @@ export function updateStudent(id: string, updates: Partial<NewStudentInput>): { 
   if (amountPaid > totalFees) return { success: false, error: "Amount Paid cannot be greater than the initial billed total." };
   const updatedRecord: Student = normalizeStudent({
     ...existing,
-    id: existing.id,
     name: updates.name !== undefined ? updates.name.trim() : existing.name,
     fatherName: updates.fatherName !== undefined ? updates.fatherName.trim() || undefined : existing.fatherName,
     gender: updates.gender === "Male" || updates.gender === "Female" || updates.gender === "Unspecified" ? updates.gender : existing.gender,
@@ -296,6 +285,7 @@ export function updateStudent(id: string, updates: Partial<NewStudentInput>): { 
     shiftTime: updates.shiftTime !== undefined ? updates.shiftTime.trim() || undefined : existing.shiftTime,
     phone: updates.phone !== undefined ? updates.phone.trim() || undefined : existing.phone,
     phone2: updates.phone2 !== undefined ? updates.phone2.trim() || undefined : existing.phone2,
+    bankName: updates.bankName !== undefined ? updates.bankName.trim() || undefined : existing.bankName,
     bankAccountName: updates.bankAccountName !== undefined ? updates.bankAccountName.trim() || undefined : existing.bankAccountName,
     bankAccountNumber: updates.bankAccountNumber !== undefined ? updates.bankAccountNumber.trim() || undefined : existing.bankAccountNumber,
     course: updates.course !== undefined ? updates.course.trim() || undefined : existing.course,
@@ -328,7 +318,6 @@ export function recordQuickPayment(id: string, additionalAmount: number): { succ
   const newPaid = student.amountPaid + numAdd;
   const payment: PaymentRecord = {
     id: `PAY-${paymentNow.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
-    studentId: student.id,
     studentName: student.name,
     amount: numAdd,
     paymentDate: paymentNow.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
@@ -352,7 +341,7 @@ export function recordQuickPayment(id: string, additionalAmount: number): { succ
     payments: [payment, ...(student.payments || [])],
   });
   const saved = getStudents();
-  const index = saved.findIndex((item) => item.id === student.id);
+  const index = saved.findIndex((item) => item.createdAt === student.createdAt);
   if (index < 0) return { success: false, error: "Student not found." };
   saved[index] = updated;
   saveStudentsList(saved);
