@@ -38,7 +38,7 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return segmentStudents;
-    return segmentStudents.filter((s) => [s.id, s.name, s.phone, s.course, s.notes, s.gender, s.shift].some((value) => String(value || "").toLowerCase().includes(q)));
+    return segmentStudents.filter((s) => [s.createdAt, s.name, s.phone, s.course, s.notes, s.gender, s.shift].some((value) => String(value || "").toLowerCase().includes(q)));
   }, [segmentStudents, search]);
   const metrics = calculateMetrics(segmentStudents);
   const meta = segmentMeta[segment];
@@ -70,11 +70,11 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1250px] text-sm">
               <thead><tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3 text-center">Student ID</th><th className="px-4 py-3 text-center">Student Name</th><th className="px-4 py-3 text-center">Gender</th><th className="px-4 py-3 text-center">Shift</th><th className="px-4 py-3 text-center">Class Time</th><th className="px-4 py-3 text-center">Phone / WhatsApp</th><th className="px-4 py-3 text-center">Course / Class</th><th className="px-4 py-3 text-center">Date Joined</th><th className="px-4 py-3 text-center">Saved At</th><th className="px-4 py-3 text-center">Total Fees</th><th className="px-4 py-3 text-center">Paid</th><th className="px-4 py-3 text-center">Remaining</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-center">Notes</th><th className="px-4 py-3 text-center">Actions</th>
+                <th className="px-4 py-3 text-center">Student Name</th><th className="px-4 py-3 text-center">Father Name</th><th className="px-4 py-3 text-center">Gender</th><th className="px-4 py-3 text-center">Shift</th><th className="px-4 py-3 text-center">Class Time</th><th className="px-4 py-3 text-center">Phone / WhatsApp</th><th className="px-4 py-3 text-center">Course / Class</th><th className="px-4 py-3 text-center">Date Joined</th><th className="px-4 py-3 text-center">Saved At</th><th className="px-4 py-3 text-center">Total Fees</th><th className="px-4 py-3 text-center">Paid</th><th className="px-4 py-3 text-center">Remaining</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-center">Notes</th><th className="px-4 py-3 text-center">Actions</th>
               </tr></thead>
-              <tbody className="divide-y divide-border/60">{filtered.map((s) => <tr key={s.id} className="hover:bg-muted/20">
-                <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold text-cyan-400">{s.id}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center font-semibold">{s.name}</td>
+              <tbody className="divide-y divide-border/60">{filtered.map((s) => <tr key={s.createdAt} className="hover:bg-muted/20">
+                
+                <td className="whitespace-nowrap px-4 py-4 text-center font-semibold">{s.name}</td><td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.fatherName || "—"}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.gender || "Unspecified"}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.shift || "Unspecified"}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.shiftTime || "—"}</td>
