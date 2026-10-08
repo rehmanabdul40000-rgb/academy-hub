@@ -2,6 +2,7 @@ import { getStudents, saveStudentsList } from "@/features/students/students.stor
 import type { Student } from "@/types/student";
 
 const RECOVERY_STORAGE_KEY = "academy_hub_deleted_students_v2_fresh";
+const LEGACY_RECOVERY_KEYS = ["academy_hub_deleted_students_v1"];
 
 export interface DeletedStudentRecord {
   recoveryId: string;
@@ -15,6 +16,7 @@ export interface DeletedStudentRecord {
 function readRecoveryRecords(): DeletedStudentRecord[] {
   if (typeof window === "undefined") return [];
   try {
+    if (!localStorage.getItem(RECOVERY_STORAGE_KEY)) LEGACY_RECOVERY_KEYS.forEach((key) => localStorage.removeItem(key));
     const parsed = JSON.parse(localStorage.getItem(RECOVERY_STORAGE_KEY) || "[]");
     return Array.isArray(parsed) ? (parsed as DeletedStudentRecord[]) : [];
   } catch {
