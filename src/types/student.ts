@@ -39,6 +39,8 @@ export interface Student {
   shiftTime?: string;
   phone?: string;
   phone2?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
   course?: string;
   dateJoined?: string;
   admissionFee: number;
