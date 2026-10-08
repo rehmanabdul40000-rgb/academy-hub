@@ -98,6 +98,33 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           </div>
         ) : <div className="p-12 text-center text-sm text-muted-foreground">{search ? "No matching records found." : meta.empty}</div>}
       </div>
+
+      <ViewStudentModal
+        student={viewingStudent}
+        open={!!viewingStudent}
+        onClose={() => setViewingStudent(null)}
+        onEdit={(student) => setEditingStudent(student)}
+        onQuickPayment={(student) => setPayingStudent(student)}
+        onDelete={(student) => setDeletingStudent(student)}
+      />
+      <EditStudentModal
+        student={editingStudent}
+        open={!!editingStudent}
+        onClose={() => setEditingStudent(null)}
+        onSuccess={() => { setEditingStudent(null); setStudents(getStudents()); }}
+      />
+      <QuickPaymentModal
+        student={payingStudent}
+        open={!!payingStudent}
+        onClose={() => setPayingStudent(null)}
+        onSuccess={() => { setPayingStudent(null); setStudents(getStudents()); }}
+      />
+      <DeleteStudentDialog
+        student={deletingStudent}
+        open={!!deletingStudent}
+        onClose={() => setDeletingStudent(null)}
+        onSuccess={() => setStudents(getStudents())}
+      />
     </AppShell>
   );
 }
