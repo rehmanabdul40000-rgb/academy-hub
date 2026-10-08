@@ -27,6 +27,8 @@ import {
   computeStudentStatus,
   formatCurrency,
   getPaymentHistory,
+  getMonthlyFeeHistory,
+  getOutstandingMonthlyAmount,
   getStudentSavedAt,
   recordQuickPayment,
   updateStudent,
@@ -63,6 +65,7 @@ export function QuickPaymentModal({
   const currentPaid = student.amountPaid;
   const currentTotal = student.totalFees;
   const currentRemaining = student.remainingFees;
+  const scheduledOutstanding = Math.max(0, student.admissionFee - student.admissionPaid) + getOutstandingMonthlyAmount(student);
 
   const numAdded = parseFloat(amountToAdd) || 0;
   const previewPaid = currentPaid + numAdded;
@@ -83,10 +86,8 @@ export function QuickPaymentModal({
       setError("Please enter a valid payment amount greater than zero.");
       return;
     }
-    if (currentPaid + numAdded > currentTotal) {
-      setError(
-        `Payment amount cannot exceed the remaining balance of ${formatCurrency(currentRemaining)}.`,
-      );
+    if (numAdded > scheduledOutstanding) {
+      setError(`Payment cannot exceed the currently scheduled outstanding balance of ${formatCurrency(scheduledOutstanding)}.`);
       return;
     }
 
@@ -289,8 +290,10 @@ export function EditStudentModal({
   onSuccess: () => void;
 }) {
   const [name, setName] = useState("");
+  const [fatherName, setFatherName] = useState("");
   const [gender, setGender] = useState<"Male" | "Female" | "Unspecified">("Unspecified");
   const [phone, setPhone] = useState("");
+  const [phone2, setPhone2] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
   const [totalFees, setTotalFees] = useState("");
@@ -301,8 +304,10 @@ export function EditStudentModal({
   useEffect(() => {
     if (student) {
       setName(student.name || "");
+      setFatherName(student.fatherName || "");
       setGender(student.gender || "Unspecified");
       setPhone(student.phone || "");
+      setPhone2(student.phone2 || "");
       setCourse(student.course || "");
       setDateJoined(student.dateJoined || "");
       setTotalFees(student.totalFees?.toString() || "0");
@@ -344,8 +349,10 @@ export function EditStudentModal({
 
     const res = updateStudent(student!.id, {
       name: name.trim(),
+      fatherName: fatherName.trim() || undefined,
       gender,
       phone: phone.trim() || undefined,
+      phone2: phone2.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
       totalFees: numTotal,
@@ -390,18 +397,6 @@ export function EditStudentModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              Student ID (Manual, Cannot be altered here)
-            </label>
-            <input
-              type="text"
-              value={student.id}
-              disabled
-              className="mt-1 h-10 w-full rounded-lg border border-input bg-muted/40 px-3 text-sm text-muted-foreground"
-            />
-          </div>
-
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-foreground">Student Full Name *</label>
@@ -424,6 +419,14 @@ export function EditStudentModal({
                 placeholder="0300-1234567"
                 className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Father Name</label>
+              <input type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father full name" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Contact No. 2</label>
+              <input type="tel" value={phone2} onChange={(e) => setPhone2(e.target.value)} placeholder="0312-7654321" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
             </div>
           </div>
 
@@ -734,6 +737,21 @@ export function ViewStudentModal({
             </section>
           )}
 
+          <section className="rounded-lg border border-border bg-muted/20 p-3.5">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Month-wise Fee Record</h4>
+              <span className="text-[11px] text-muted-foreground">{getMonthlyFeeHistory(student).length} month(s)</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {getMonthlyFeeHistory(student).map((fee) => (
+                <div key={fee.id} className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-card p-2.5 text-xs">
+                  <div><p className="font-semibold text-foreground">{fee.monthLabel}</p><p className="text-[11px] text-muted-foreground">Due {formatCurrency(fee.dueAmount)} · Paid {formatCurrency(fee.paidAmount)}</p></div>
+                  <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${fee.status === "Paid" ? "border-emerald-500/30 text-emerald-400" : fee.status === "Partial" ? "border-blue-500/30 text-blue-400" : "border-amber-500/30 text-amber-400"}`}>{fee.status}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Notes */}
           {student.notes && (
             <div className="rounded-lg border border-border bg-card p-3 text-xs">
@@ -772,7 +790,7 @@ export function ViewStudentModal({
                 <Edit3 className="size-3.5" />
                 Edit
               </Button>}
-              {can("payments") && student.remainingFees > 0 && (
+              {can("payments") && (Math.max(0, student.admissionFee - student.admissionPaid) + getOutstandingMonthlyAmount(student)) > 0 && (
                 <Button
                   type="button"
                   size="sm"
