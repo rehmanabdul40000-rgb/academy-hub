@@ -21,6 +21,10 @@ function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, 
   cells.forEach((value, index) => normalized.set(String(index), value));
   const aliases: Record<string, string[]> = {
     id: ["studentid", "id", "studentnumber", "registrationno", "rollno"],
+    fatherName: ["fathername", "father", "fatherfullname"],
+    phone2: ["phone2", "contact2", "secondcontact", "alternatephone", "alternatecontact"],
+    admissionFee: ["admissionfee", "admission", "admissioncharges"],
+    monthlyFee: ["monthlyfee", "monthly", "monthlycharges"],
     name: ["studentname", "fullname", "name", "studentfullname"],
     gender: ["gender", "sex"],
     phone: ["phonewhatsapp", "phone", "whatsapp", "contact", "mobile"],
@@ -41,20 +45,22 @@ function rowToInput(values: unknown[], rowNumber: number, columns?: Map<string, 
     }
     return "";
   };
-  const id = get("id");
+  const id = get("id") || undefined;
   const name = get("name");
-  if (!id || !name) return { error: `Row ${rowNumber}: Student ID and Student Name are required.` };
+  if (!name) return { error: `Row ${rowNumber}: Student Name is required.` };
+  const admissionFee = Number(get("admissionFee") || 0);
+  const monthlyFee = Number(get("monthlyFee") || 0);
   const totalRaw = get("totalFees");
-  const totalFees = Number(totalRaw || 0);
-  if (!Number.isFinite(totalFees) || totalFees < 0) return { error: `Row ${rowNumber}: Total Fees is invalid.` };
+  const totalFees = totalRaw === "" ? admissionFee + monthlyFee : Number(totalRaw);
+  if (![admissionFee, monthlyFee, totalFees].every(Number.isFinite) || admissionFee < 0 || monthlyFee < 0 || totalFees < 0) return { error: `Row ${rowNumber}: Fee values are invalid.` };
   const paidRaw = get("amountPaid");
   const amountPaid = paidRaw === "" ? 0 : Number(paidRaw);
-  if (!Number.isFinite(amountPaid) || amountPaid < 0 || amountPaid > totalFees) return { error: `Row ${rowNumber}: Amount Paid is invalid or greater than Total Fees.` };
+  if (!Number.isFinite(amountPaid) || amountPaid < 0 || amountPaid > Math.max(totalFees, admissionFee + monthlyFee)) return { error: `Row ${rowNumber}: Amount Paid is invalid or greater than the initial fee total.` };
   const genderRaw = get("gender").toLowerCase();
   const shiftRaw = get("shift").toLowerCase();
   const gender: StudentGender | undefined = genderRaw === "male" ? "Male" : genderRaw === "female" ? "Female" : undefined;
   const shift: StudentShift | undefined = shiftRaw.includes("morning") ? "Morning" : shiftRaw.includes("evening") ? "Evening" : undefined;
-  return { row: { id, name, gender, phone: get("phone") || undefined, course: get("course") || undefined, dateJoined: get("dateJoined") || undefined, shift, shiftTime: get("shiftTime") || undefined, totalFees, amountPaid, notes: get("notes") || undefined } };
+  return { row: { id, name, fatherName: get("fatherName") || undefined, gender, phone: get("phone") || undefined, phone2: get("phone2") || undefined, course: get("course") || undefined, dateJoined: get("dateJoined") || undefined, shift, shiftTime: get("shiftTime") || undefined, admissionFee, monthlyFee, totalFees, amountPaid, notes: get("notes") || undefined } };
 }
 
 export async function parseStudentImportFile(file: File): Promise<StudentImportResult> {
@@ -76,7 +82,7 @@ export async function parseStudentImportFile(file: File): Promise<StudentImportR
   const start = knownHeader ? 2 : 1;
   const rows: NewStudentInput[] = [];
   const errors: string[] = [];
-  if (!knownHeader) errors.push("The first row must contain column headings such as Student ID, Student Name, Gender, Total Fees, and Amount Paid.");
+  if (!knownHeader) errors.push("The first row must contain column headings such as Student Name, Father Name, Admission Fee, Monthly Fee, and Amount Paid.");
   for (let rowNumber = start; rowNumber <= values.length; rowNumber += 1) {
     const parsed = rowToInput(values[rowNumber - 1] || [], rowNumber, columns);
     if (parsed.row) rows.push(parsed.row);
