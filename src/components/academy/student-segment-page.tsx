@@ -103,9 +103,9 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
         student={viewingStudent}
         open={!!viewingStudent}
         onClose={() => setViewingStudent(null)}
-        onEdit={(student) => setEditingStudent(student)}
-        onQuickPayment={(student) => setPayingStudent(student)}
-        onDelete={(student) => setDeletingStudent(student)}
+        onEdit={(student) => { setViewingStudent(null); setEditingStudent(student); }}
+        onQuickPayment={(student) => { setViewingStudent(null); setPayingStudent(student); }}
+        onDelete={(student) => { setViewingStudent(null); setDeletingStudent(student); }}
       />
       <EditStudentModal
         student={editingStudent}
