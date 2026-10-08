@@ -2,6 +2,7 @@ import { formatCurrencyWithLabel, getSettings } from "@/features/settings/settin
 import type { FeeMetrics, MonthlyFeeRecord, NewStudentInput, PaymentRecord, PaymentStatus, Student } from "@/types/student";
 
 const STORAGE_KEY = "academy_hub_students_v4_fresh";
+const LEGACY_STORAGE_KEYS = ["academy_hub_students_v3", "academy_hub_students_v2", "academy_hub_students_v1"];
 
 export function computeRemaining(totalFees: number, amountPaid: number): number {
   return Math.max(0, Number(totalFees || 0) - Number(amountPaid || 0));
@@ -109,7 +110,7 @@ export function getStudents(): Student[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) { LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); return []; }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     const normalized = parsed.map((student) => normalizeStudent({
