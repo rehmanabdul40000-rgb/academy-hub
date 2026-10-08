@@ -27,6 +27,8 @@ function AddStudentPage() {
   const [shiftTime, setShiftTime] = useState("");
   const [phone, setPhone] = useState("");
   const [phone2, setPhone2] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
   const [admissionFee, setAdmissionFee] = useState("");
@@ -65,7 +67,7 @@ function AddStudentPage() {
 
   function resetForm() {
     setName(""); setFatherName(""); setGender(""); setShift(""); setShiftTime("");
-    setPhone(""); setPhone2(""); setCourse(""); setDateJoined("");
+    setPhone(""); setPhone2(""); setBankAccountName(""); setBankAccountNumber(""); setCourse(""); setDateJoined("");
     setAdmissionFee(""); setMonthlyFee(""); setAmountPaid(""); setNotes(""); setErrorMessage("");
   }
 
@@ -83,6 +85,7 @@ function AddStudentPage() {
       shift: shift === "morning" ? "Morning" : shift === "evening" ? "Evening" : undefined,
       shiftTime: shiftTime || undefined,
       phone: phone.trim() || undefined, phone2: phone2.trim() || undefined,
+      bankAccountName: bankAccountName.trim() || undefined, bankAccountNumber: bankAccountNumber.trim() || undefined,
       course: course.trim() || undefined, dateJoined: dateJoined.trim() || undefined,
       admissionFee: numAdmission, monthlyFee: numMonthly, amountPaid: numPaid,
       notes: notes.trim() || undefined,
@@ -120,6 +123,10 @@ function AddStudentPage() {
               <div><label className="text-xs font-medium">Contact No. 1</label><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0300-1234567" className={inputClass} /></div>
               <div><label className="text-xs font-medium">Contact No. 2</label><input value={phone2} onChange={(e) => setPhone2(e.target.value)} placeholder="0312-7654321" className={inputClass} /></div>
               <div><label className="text-xs font-medium">Gender</label><select value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className={inputClass}><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div><label className="text-xs font-medium">Bank Account Name / Title</label><input value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} placeholder="Account holder / title" className={inputClass} /></div>
+              <div><label className="text-xs font-medium">Bank Account Number</label><input value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} placeholder="Account number" className={inputClass} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="text-xs font-medium">Course / Class</label><input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. 1st Year / Mathematics" className={inputClass} /></div>
