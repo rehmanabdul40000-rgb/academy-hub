@@ -76,6 +76,8 @@ function SettingsPage() {
   const [contactEmail, setContactEmail] = useState(settings.contactEmail || "");
   const [contactPhone, setContactPhone] = useState(settings.contactPhone || "");
   const [address, setAddress] = useState(settings.address || "");
+  const [bankAccountName, setBankAccountName] = useState(settings.bankAccountName || "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(settings.bankAccountNumber || "");
 
   const students = getStudents();
 
@@ -95,6 +97,8 @@ function SettingsPage() {
     setContactEmail(s.contactEmail || "");
     setContactPhone(s.contactPhone || "");
     setAddress(s.address || "");
+    setBankAccountName(s.bankAccountName || "");
+    setBankAccountNumber(s.bankAccountNumber || "");
     const onTheme = (e: Event) => setTheme((e as CustomEvent<"dark" | "light">).detail || getWorkspaceTheme());
     const onSections = () => setWorkspaceSections(getWorkspaceSections());
     window.addEventListener("academy-theme-updated", onTheme);
@@ -116,6 +120,8 @@ function SettingsPage() {
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
       address: address.trim(),
+      bankAccountName: bankAccountName.trim(),
+      bankAccountNumber: bankAccountNumber.trim(),
     });
 
     setSettings(updated);
@@ -156,6 +162,8 @@ function SettingsPage() {
       setContactEmail(backup.settings.contactEmail || "");
       setContactPhone(backup.settings.contactPhone || "");
       setAddress(backup.settings.address || "");
+      setBankAccountName(backup.settings.bankAccountName || "");
+      setBankAccountNumber(backup.settings.bankAccountNumber || "");
       setBackupError("");
       setSaveSuccess(true);
     } catch (error) {
@@ -277,6 +285,26 @@ function SettingsPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="e.g. Sector F-7, Islamabad"
+                  className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-foreground">Bank Account Name / Title</label>
+                <input
+                  type="text"
+                  value={bankAccountName}
+                  onChange={(e) => setBankAccountName(e.target.value)}
+                  placeholder="e.g. Stars Academy Lahore"
+                  className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-foreground">Bank Account Number</label>
+                <input
+                  type="text"
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value)}
+                  placeholder="e.g. 01234567890123"
                   className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                 />
               </div>
