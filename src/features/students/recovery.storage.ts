@@ -71,7 +71,7 @@ export function confirmStudentDeletion(recoveryId: string): { success: boolean; 
 
   const snapshot = records[index]!;
   const students = getStudents();
-  const remaining = students.filter((student) => student.id !== snapshot.student.id);
+  const remaining = students.filter((student) => student.createdAt !== snapshot.student.createdAt);
   if (remaining.length === students.length) return { success: false, error: "Student not found." };
 
   records[index] = { ...snapshot, status: "deleted" };
@@ -94,11 +94,9 @@ export function restoreDeletedStudent(recoveryId: string): {
   const record = records[index]!;
   const students = getStudents();
   if (
-    students.some(
-      (student) => student.id.trim().toLowerCase() === record.student.id.trim().toLowerCase(),
-    )
+    students.some((student) => student.createdAt === record.student.createdAt)
   ) {
-    return { success: false, error: "A student with this Student ID already exists." };
+    return { success: false, error: "This student record already exists." };
   }
 
   saveStudentsList([record.student, ...students]);
