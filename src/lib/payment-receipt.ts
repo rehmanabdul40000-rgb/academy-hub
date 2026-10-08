@@ -120,7 +120,7 @@ function makeCopy(label, studentCopy){
  '</div></div>'+
  '<div class="bank"><div><b>Bank Name</b>'+esc(val("bankName")||"—")+'</div><div><b>Account Name / Title</b>'+esc(val("accountName")||"—")+'</div><div><b>Account Number</b>'+esc(val("accountNumber")||"—")+'</div></div>'+
  '<table class="fees"><thead><tr><th>Fee / Charges</th><th>Amount</th><th>Status / Detail</th></tr></thead><tbody>'+
- '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "One-time") +'</td></tr>'+
+ '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Admission") +'</td></tr>'+
  '<tr><td>Test / Session Charges</td><td>'+amountForCopy(num("testCharges"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
  '<tr><td>Total Fee</td><td>'+amountForCopy(totalFee,studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Total") +'</td></tr>'+
  '<tr><td>Monthly Fee'+(val("section")?" · "+esc(val("section")):"")+'</td><td>'+amountForCopy(num("monthlyFee"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Monthly") +'</td></tr>'+
