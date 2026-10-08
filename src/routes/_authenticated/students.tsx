@@ -94,7 +94,9 @@ function StudentsPage() {
       return (
         s.id.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
+        (s.fatherName && s.fatherName.toLowerCase().includes(q)) ||
         (s.phone && s.phone.toLowerCase().includes(q)) ||
+        (s.phone2 && s.phone2.toLowerCase().includes(q)) ||
         (s.course && s.course.toLowerCase().includes(q)) ||
         (s.notes && s.notes.toLowerCase().includes(q))
       );
@@ -161,7 +163,7 @@ function StudentsPage() {
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by ID, name, phone, course, or notes..."
+              placeholder="Search by name, father name, contact, course, or notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-xs outline-none transition-colors focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
@@ -250,7 +252,6 @@ function StudentsPage() {
             <table id="students-directory-table" className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <th className="px-5 py-3.5">Student ID</th>
                   <th className="px-5 py-3.5">Student Name</th>
                   <th className="px-5 py-3.5">Gender</th>
                   <th className="px-5 py-3.5">Phone / WhatsApp</th>
@@ -272,11 +273,6 @@ function StudentsPage() {
                     id={`student-row-${s.id}`}
                     className="transition-colors hover:bg-muted/20"
                   >
-                    {/* ID */}
-                    <td className="whitespace-nowrap px-5 py-4 font-mono text-xs font-semibold text-cyan-400">
-                      {s.id}
-                    </td>
-
                     {/* Name */}
                     <td className="whitespace-nowrap px-5 py-4 font-medium text-foreground">
                       <div className="flex items-center gap-2.5">
@@ -285,6 +281,7 @@ function StudentsPage() {
                         </span>
                         <div>
                           <p className="font-semibold text-foreground">{s.name}</p>
+                          {s.fatherName && <p className="text-[11px] text-muted-foreground">Father: {s.fatherName}</p>}
                           {s.phone && (
                             <p className="text-[11px] text-muted-foreground sm:hidden">{s.phone}</p>
                           )}
@@ -297,17 +294,10 @@ function StudentsPage() {
 
                     {/* Phone */}
                     <td className="whitespace-nowrap px-5 py-4 text-xs">
-                      {s.phone ? (
-                        <a
-                          href={`tel:${s.phone}`}
-                          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-cyan-400"
-                        >
-                          <Phone className="size-3 text-muted-foreground/60" />
-                          <span>{s.phone}</span>
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground/40">—</span>
-                      )}
+                      <div className="space-y-1">
+                        {s.phone ? <a href={`tel:${s.phone}`} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-cyan-400"><Phone className="size-3 text-muted-foreground/60" /><span>{s.phone}</span></a> : <span className="text-muted-foreground/40">—</span>}
+                        {s.phone2 && <div className="text-[11px] text-muted-foreground">{s.phone2}</div>}
+                      </div>
                     </td>
 
                     {/* Course */}
