@@ -319,20 +319,27 @@ export function recordQuickPayment(id: string, additionalAmount: number): { succ
   const paymentNow = new Date();
   const allocation = allocatePayment(student, numAdd);
   const newPaid = student.amountPaid + numAdd;
+  const changedMonthKey = allocation.monthlyFees.find((item) => item.paidAmount > (student.monthlyFees?.find((old) => old.monthKey === item.monthKey)?.paidAmount || 0))?.monthKey;
+  const feeType: PaymentRecord["feeType"] = allocation.admissionPaid > student.admissionPaid ? "Admission Fee" : "Monthly Fee";
+  const existingPayments = [...(student.payments || [])];
+  const existingReceiptIndex = existingPayments.findIndex((item) => item.feeType === feeType && item.monthKey === changedMonthKey);
+  const existingReceipt = existingReceiptIndex >= 0 ? existingPayments[existingReceiptIndex] : undefined;
   const payment: PaymentRecord = {
-    id: `PAY-${paymentNow.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+    id: existingReceipt?.id || `PAY-${paymentNow.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
     studentName: student.name,
-    amount: numAdd,
+    amount: (existingReceipt?.amount || 0) + numAdd,
     paymentDate: paymentNow.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
     paymentTime: paymentNow.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
-    previousPaid: student.amountPaid,
-    previousRemaining: student.remainingFees,
+    previousPaid: existingReceipt?.previousPaid ?? student.amountPaid,
+    previousRemaining: existingReceipt?.previousRemaining ?? student.remainingFees,
     newPaid,
     newRemaining: computeRemaining(student.totalFees, Math.min(newPaid, student.totalFees)),
     recordedBy: getSettings().adminDisplayName || "Admin",
-    feeType: allocation.admissionPaid > student.admissionPaid ? "Admission Fee" : "Monthly Fee",
-    monthKey: allocation.monthlyFees.find((item) => item.paidAmount > (student.monthlyFees?.find((old) => old.monthKey === item.monthKey)?.paidAmount || 0))?.monthKey,
+    feeType,
+    monthKey: changedMonthKey,
   };
+  if (existingReceiptIndex >= 0) existingPayments[existingReceiptIndex] = payment;
+  else existingPayments.unshift(payment);
   const updated: Student = normalizeStudent({
     ...student,
     admissionPaid: allocation.admissionPaid,
@@ -341,7 +348,7 @@ export function recordQuickPayment(id: string, additionalAmount: number): { succ
     remainingFees: computeRemaining(student.totalFees, Math.min(newPaid, student.totalFees)),
     status: computeStudentStatus(student.totalFees, Math.min(newPaid, student.totalFees)),
     updatedAt: paymentNow.toISOString(),
-    payments: [payment, ...(student.payments || [])],
+    payments: existingPayments,
   });
   const saved = getStudents();
   const index = saved.findIndex((item) => item.createdAt === student.createdAt);
