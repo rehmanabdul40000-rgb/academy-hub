@@ -2,6 +2,17 @@ export type PaymentStatus = "Paid" | "Partial" | "Pending";
 export type StudentGender = "Male" | "Female" | "Unspecified";
 export type StudentShift = "Morning" | "Evening" | "Unspecified";
 
+export interface MonthlyFeeRecord {
+  id: string;
+  monthKey: string;
+  monthLabel: string;
+  dueAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: PaymentStatus;
+  paidAt?: string;
+}
+
 export interface PaymentRecord {
   id: string;
   studentId: string;
@@ -15,17 +26,24 @@ export interface PaymentRecord {
   newRemaining: number;
   recordedBy: string;
   note?: string;
+  feeType?: "Admission Fee" | "Monthly Fee";
+  monthKey?: string;
 }
 
 export interface Student {
   id: string;
   name: string;
+  fatherName?: string;
   gender: StudentGender;
   shift: StudentShift;
   shiftTime?: string;
   phone?: string;
+  phone2?: string;
   course?: string;
   dateJoined?: string;
+  admissionFee: number;
+  admissionPaid: number;
+  monthlyFee: number;
   totalFees: number;
   amountPaid: number;
   remainingFees: number;
@@ -36,20 +54,25 @@ export interface Student {
   timeAdded?: string;
   createdAt: string;
   updatedAt: string;
+  monthlyFees?: MonthlyFeeRecord[];
   payments?: PaymentRecord[];
 }
 
 export type NewStudentInput = {
-  id: string;
+  id?: string;
   name: string;
+  fatherName?: string;
   gender?: StudentGender;
   shift?: StudentShift;
   shiftTime?: string;
   phone?: string;
+  phone2?: string;
   course?: string;
   dateJoined?: string;
-  totalFees: number;
+  admissionFee?: number;
   amountPaid?: number;
+  monthlyFee?: number;
+  totalFees?: number;
   notes?: string;
   dateAdded?: string;
   timeAdded?: string;
