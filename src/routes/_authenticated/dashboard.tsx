@@ -179,7 +179,6 @@ function Dashboard() {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
-        s.id.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
         (s.phone && s.phone.toLowerCase().includes(q)) ||
         (s.course && s.course.toLowerCase().includes(q))
@@ -414,12 +413,12 @@ function Dashboard() {
               const status = computeStudentStatus(student.totalFees, student.amountPaid);
               return (
                 <div
-                  key={student.id}
+                  key={student.createdAt}
                   className="grid grid-cols-[1fr_auto] gap-3 px-5 py-3.5 text-xs sm:grid-cols-[1.5fr_1fr_1fr_1fr_auto]"
                 >
                   <div>
                     <p className="font-semibold text-foreground">{student.name}</p>
-                    <p className="font-mono text-[11px] text-cyan-400">{student.id}</p>
+                    <p className="font-mono text-[11px] text-cyan-400">{student.createdAt}</p>
                   </div>
                   <span className="hidden self-center text-muted-foreground sm:block">
                     {formatCurrency(student.totalFees)}
@@ -468,7 +467,7 @@ function Dashboard() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search by ID, name, phone, course..."
+                  placeholder="Search by name, father name, phone, course..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-9 w-full rounded-lg border border-input bg-background pl-8 pr-3 text-xs outline-none transition-colors focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
@@ -528,8 +527,8 @@ function Dashboard() {
               <table id="recent-students-table" className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-5 py-3.5">Student ID</th>
                     <th className="px-5 py-3.5">Student Name</th>
+                    <th className="px-5 py-3.5">Father Name</th>
                     <th className="px-5 py-3.5">Gender</th>
                     <th className="px-5 py-3.5">Phone</th>
                     <th className="px-5 py-3.5">Course / Class</th>
@@ -544,15 +543,11 @@ function Dashboard() {
                 <tbody className="divide-y divide-border/60">
                   {filteredStudents.slice(0, 10).map((s) => (
                     <tr
-                      key={s.id}
-                      id={`student-row-${s.id}`}
+                      key={s.createdAt}
+                      id={`student-row-${s.createdAt}`}
                       className="transition-colors hover:bg-muted/20"
                     >
                       {/* ID */}
-                      <td className="whitespace-nowrap px-5 py-3.5 font-mono text-xs font-semibold text-cyan-400">
-                        {s.id}
-                      </td>
-
                       {/* Name */}
                       <td className="px-5 py-3.5 font-medium text-foreground">
                         <div className="flex items-center gap-2">
@@ -562,6 +557,9 @@ function Dashboard() {
                           <span>{s.name}</span>
                         </div>
                       </td>
+
+                      {/* Father Name */}
+                      <td className="px-5 py-3.5 text-xs text-muted-foreground">{s.fatherName || <span className="text-muted-foreground/40">—</span>}</td>
 
                       {/* Gender */}
                       <td className="whitespace-nowrap px-5 py-3.5 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-0.5">{s.gender || "Unspecified"}</span></td>
