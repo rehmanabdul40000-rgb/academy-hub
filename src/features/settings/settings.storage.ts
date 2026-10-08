@@ -1,5 +1,6 @@
 export interface AcademySettings {
   academyName: string;
+  campusName?: string;
   adminDisplayName: string;
   adminUsername: string;
   adminPassword: string;
@@ -8,6 +9,7 @@ export interface AcademySettings {
   contactEmail?: string;
   contactPhone?: string;
   address?: string;
+  bankName?: string;
   bankAccountName?: string;
   bankAccountNumber?: string;
   updatedAt: string;
@@ -17,6 +19,7 @@ const SETTINGS_STORAGE_KEY = "academy_hub_workspace_settings_v1";
 
 export const DEFAULT_SETTINGS: AcademySettings = {
   academyName: "Academy Hub",
+  campusName: "",
   adminDisplayName: "Admin",
   adminUsername: "admin",
   adminPassword: import.meta.env.VITE_DEFAULT_ADMIN_PASSWORD ?? "",
@@ -25,6 +28,7 @@ export const DEFAULT_SETTINGS: AcademySettings = {
   contactEmail: "",
   contactPhone: "",
   address: "",
+  bankName: "",
   bankAccountName: "",
   bankAccountNumber: "",
   updatedAt: new Date().toISOString(),
