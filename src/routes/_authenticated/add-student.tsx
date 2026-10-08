@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { CalendarDays, createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
@@ -132,7 +132,7 @@ function AddStudentPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="text-xs font-medium">Course / Class</label><input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. 1st Year / Mathematics" className={inputClass} /></div>
-              <div><label className="text-xs font-medium">Date Joined</label><input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} className={`${inputClass} cursor-pointer`} /></div>
+              <div><label className="text-xs font-medium">Date Joined</label><div className="relative"><input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} className={`${inputClass} cursor-pointer pr-10`} /><CalendarDays className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-black dark:text-black" /></div></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="text-xs font-medium">Shift</label><select value={shift} onChange={(e) => handleShiftChange(e.target.value)} className={inputClass}><option value="">Select shift</option>{shifts.filter((s) => s.active).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
