@@ -22,16 +22,16 @@ export function printPaymentReceipt(student: Student, payment: PaymentRecord): v
 
   const initial = {
     academyName: settings.academyName?.trim() || "Academy Hub",
-    campus: "",
+    campus: settings.campusName?.trim() || "",
     studentName: student.name || "",
     fatherName: student.fatherName || "",
     section: student.shift || "",
     className: student.course || "",
     phone1: student.phone || "",
     phone2: student.phone2 || "",
-    bankName: student.bankName || "",
-    accountName: student.bankAccountName || "",
-    accountNumber: student.bankAccountNumber || "",
+    bankName: settings.bankName?.trim() || "",
+    accountName: settings.bankAccountName?.trim() || "",
+    accountNumber: settings.bankAccountNumber?.trim() || "",
     receiptNo: payment.id,
     date: payment.paymentDate,
     time: payment.paymentTime,
@@ -101,10 +101,11 @@ function loadEditor(){ids.forEach(id=>{if(el(id)) el(id).value=data[id]??""})}
 function openEditor(){loadEditor();el("editor").style.display="block"}
 function closeEditor(){el("editor").style.display="none"}
 function saveEditor(){ids.forEach(id=>{if(el(id)) data[id]=el(id).value});render();closeEditor()}
-function amountForCopy(value, studentCopy){return studentCopy ? (Number(value||0)>0 ? "PAID" : "—") : money(value)}
+function amountForCopy(value, studentCopy, status){if(!studentCopy) return money(value); return status==="Paid" ? "PAID" : status==="Partial" ? "PARTIAL" : "PENDING"}
 function makeCopy(label, studentCopy){
  const totalFee=num("admissionFee")+num("testCharges")+num("monthlyFee")+num("acDues");
  const balance=num("balance");
+ const status=val("status");
  return '<section class="copy">'+
  '<div class="copyTag">'+label+'</div>'+
  '<header class="copyHead"><div><div class="academy">'+esc(val("academyName"))+'</div><div class="sub">Student &amp; Fee Management'+(val("campus")?" · Campus: "+esc(val("campus")):"")+'</div></div><div class="copyTitle"><b>FEE RECEIPT</b>Sr. No. '+esc(val("receiptNo"))+'</div></header>'+
@@ -120,16 +121,16 @@ function makeCopy(label, studentCopy){
  '</div></div>'+
  '<div class="bank"><div><b>Bank Name</b>'+esc(val("bankName")||"—")+'</div><div><b>Account Name / Title</b>'+esc(val("accountName")||"—")+'</div><div><b>Account Number</b>'+esc(val("accountNumber")||"—")+'</div></div>'+
  '<table class="fees"><thead><tr><th>Fee / Charges</th><th>Amount</th><th>Status / Detail</th></tr></thead><tbody>'+
- '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Admission") +'</td></tr>'+
- '<tr><td>Test / Session Charges</td><td>'+amountForCopy(num("testCharges"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
- '<tr><td>Total Fee</td><td>'+amountForCopy(totalFee,studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Total") +'</td></tr>'+
- '<tr><td>Monthly Fee'+(val("section")?" · "+esc(val("section")):"")+'</td><td>'+amountForCopy(num("monthlyFee"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Monthly") +'</td></tr>'+
- '<tr><td>AC Dues</td><td>'+amountForCopy(num("acDues"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
- '<tr class="received"><td>Amount Received</td><td>'+ (studentCopy ? "PAID" : money(num("amountReceived"))) +'</td><td>'+esc(val("status"))+'</td></tr>'+
- '<tr><td>Previous Balance</td><td>'+amountForCopy(num("previousBalance"),studentCopy)+'</td><td>'+ (studentCopy ? "PAID" : "Before payment") +'</td></tr>'+
- '<tr class="total"><td>Balance / Outstanding</td><td>'+ (studentCopy ? (balance>0 ? "OUTSTANDING" : "PAID") : money(balance)) +'</td><td>'+ (balance>0 ? "Outstanding" : "Cleared") +'</td></tr>'+
+ '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Admission") +'</td></tr>'+
+ '<tr><td>Test / Session Charges</td><td>'+amountForCopy(num("testCharges"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
+ '<tr><td>Total Fee</td><td>'+amountForCopy(totalFee,studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Total") +'</td></tr>'+
+ '<tr><td>Monthly Fee'+(val("section")?" · "+esc(val("section")):"")+'</td><td>'+amountForCopy(num("monthlyFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Monthly") +'</td></tr>'+
+ '<tr><td>AC Dues</td><td>'+amountForCopy(num("acDues"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
+ '<tr class="received"><td>Amount Received</td><td>'+ (studentCopy ? (status==="Paid" ? "PAID" : status==="Partial" ? "PARTIAL" : "PENDING") : money(num("amountReceived"))) +'</td><td>'+esc(val("status"))+'</td></tr>'+
+ '<tr><td>Previous Balance</td><td>'+amountForCopy(num("previousBalance"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Before payment") +'</td></tr>'+
+ '<tr class="total"><td>Balance / Outstanding</td><td>'+ (studentCopy ? (status==="Paid" ? "PAID" : status==="Partial" ? "PARTIAL" : "PENDING") : money(balance)) +'</td><td>'+ (balance>0 ? "Outstanding" : "Cleared") +'</td></tr>'+
  '</tbody></table>'+
- '<div class="bottom"><div class="smallBox"><b>Last Date of Fee Submission</b><span>'+esc(val("lastDate")||"—")+'</span></div><div class="smallBox"><b>Late Fee</b><span>'+amountForCopy(num("lateFee"),studentCopy)+'</span></div><div class="smallBox"><b>Payment Date / Time</b><span>'+esc(val("date"))+' · '+esc(val("time"))+'</span></div></div>'+
+ '<div class="bottom"><div class="smallBox"><b>Last Date of Fee Submission</b><span>'+esc(val("lastDate")||"—")+'</span></div><div class="smallBox"><b>Late Fee</b><span>'+amountForCopy(num("lateFee"),studentCopy,status)+'</span></div><div class="smallBox"><b>Payment Date / Time</b><span>'+esc(val("date"))+' · '+esc(val("time"))+'</span></div></div>'+
  '<div class="note"><b>Note:</b> '+esc(val("note")||"—")+'</div>'+
  '<div class="status"><span>'+esc(val("academyName"))+' · '+(studentCopy ? "Student Copy" : "Academy / Campus Copy")+'</span><span class="statusBadge">'+esc(val("status"))+'</span></div>'+
  '<div class="sign"><div class="line">Received / Checked By</div><div class="line">Student / Parent Signature</div></div>'+
