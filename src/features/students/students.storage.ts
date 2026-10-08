@@ -87,7 +87,7 @@ function normalizeStudent(raw: Student): Student {
     remainingFees: computeRemaining(totalFees, amountPaid),
     status: computeStudentStatus(totalFees, amountPaid),
     monthlyFees,
-    payments: cleanRaw.payments || undefined,
+    payments: cleanRaw.payments?.map((payment) => { const { studentId: _legacyStudentId, ...cleanPayment } = payment as PaymentRecord & { studentId?: string }; return cleanPayment; }) || undefined,
   };
 }
 
@@ -112,11 +112,13 @@ export function getStudents(): Student[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((student) => normalizeStudent({
+    const normalized = parsed.map((student) => normalizeStudent({
       ...student,
       gender: student.gender === "Male" || student.gender === "Female" ? student.gender : "Unspecified",
       shift: student.shift === "Morning" || student.shift === "Evening" ? student.shift : "Unspecified",
     }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    return normalized;
   } catch (err) {
     console.error("Error reading students from storage:", err);
     return [];
