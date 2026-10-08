@@ -105,7 +105,7 @@ export function QuickPaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6">
       <div
         className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
@@ -614,7 +614,7 @@ export function ViewStudentModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="student-details-title"
-        className="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-3">
@@ -907,7 +907,6 @@ export function DeleteStudentDialog({
             <h3 id="delete-student-title" className="font-display font-semibold text-foreground">
               Delete this student?
             </h3>
-            <p className="text-xs text-muted-foreground">{student.id}</p>
           </div>
         </div>
 
