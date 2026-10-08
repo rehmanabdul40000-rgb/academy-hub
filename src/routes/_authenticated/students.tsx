@@ -281,7 +281,7 @@ function StudentsPage() {
                         </span>
                         <div>
                           <p className="font-semibold text-foreground">{s.name}</p>
-                          {s.fatherName && <p className="text-[11px] text-muted-foreground">Father: {s.fatherName}</p>}
+                          
                           {s.phone && (
                             <p className="text-[11px] text-muted-foreground sm:hidden">{s.phone}</p>
                           )}
