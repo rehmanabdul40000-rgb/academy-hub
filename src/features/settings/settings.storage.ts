@@ -8,6 +8,8 @@ export interface AcademySettings {
   contactEmail?: string;
   contactPhone?: string;
   address?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
   updatedAt: string;
 }
 
@@ -23,6 +25,8 @@ export const DEFAULT_SETTINGS: AcademySettings = {
   contactEmail: "",
   contactPhone: "",
   address: "",
+  bankAccountName: "",
+  bankAccountNumber: "",
   updatedAt: new Date().toISOString(),
 };
 
