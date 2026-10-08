@@ -296,7 +296,8 @@ export function EditStudentModal({
   const [phone2, setPhone2] = useState("");
   const [course, setCourse] = useState("");
   const [dateJoined, setDateJoined] = useState("");
-  const [totalFees, setTotalFees] = useState("");
+  const [admissionFee, setAdmissionFee] = useState("");
+  const [monthlyFee, setMonthlyFee] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -310,7 +311,8 @@ export function EditStudentModal({
       setPhone2(student.phone2 || "");
       setCourse(student.course || "");
       setDateJoined(student.dateJoined || "");
-      setTotalFees(student.totalFees?.toString() || "0");
+      setAdmissionFee(student.admissionFee?.toString() || "0");
+      setMonthlyFee(student.monthlyFee?.toString() || "0");
       setAmountPaid(student.amountPaid?.toString() || "0");
       setNotes(student.notes || "");
       setError("");
@@ -319,7 +321,9 @@ export function EditStudentModal({
 
   if (!open || !student) return null;
 
-  const numTotal = parseFloat(totalFees) || 0;
+  const numAdmission = Math.max(0, parseFloat(admissionFee) || 0);
+  const numMonthly = Math.max(0, parseFloat(monthlyFee) || 0);
+  const numTotal = numAdmission + numMonthly;
   const numPaid = parseFloat(amountPaid) || 0;
   const remaining = computeRemaining(numTotal, numPaid);
   const status = computeStudentStatus(numTotal, numPaid);
@@ -355,6 +359,8 @@ export function EditStudentModal({
       phone2: phone2.trim() || undefined,
       course: course.trim() || undefined,
       dateJoined: dateJoined.trim() || undefined,
+      admissionFee: numAdmission,
+      monthlyFee: numMonthly,
       totalFees: numTotal,
       amountPaid: numPaid,
       notes: notes.trim() || undefined,
@@ -483,33 +489,18 @@ export function EditStudentModal({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="text-xs font-medium text-foreground">
-                Total Fees ({currencyLabel}) *
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                required
-                value={totalFees}
-                onChange={(e) => setTotalFees(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-              />
+              <label className="text-xs font-medium text-foreground">Admission Fee ({currencyLabel})</label>
+              <input type="number" min="0" step="any" value={admissionFee} onChange={(e) => setAdmissionFee(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground">
-                Amount Paid ({currencyLabel})
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-              />
+              <label className="text-xs font-medium text-foreground">Monthly Fee ({currencyLabel})</label>
+              <input type="number" min="0" step="any" value={monthlyFee} onChange={(e) => setMonthlyFee(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Amount Paid ({currencyLabel})</label>
+              <input type="number" min="0" step="any" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
             </div>
           </div>
 
