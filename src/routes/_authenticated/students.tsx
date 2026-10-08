@@ -103,7 +103,7 @@ function StudentsPage() {
     });
   }, [students, statusFilter, genderFilter, searchQuery]);
 
-  async function handleImport(file: File) { try { setIsImporting(true); const result = await parseStudentImportFile(file); const existing = new Set(getStudents().map((student) => student.id.toLowerCase())); let imported = 0; let skipped = 0; for (const row of result.rows) { if (existing.has(row.id.toLowerCase())) { skipped++; continue; } const saved = addStudent(row); if (saved.success) { imported++; existing.add(row.id.toLowerCase()); } else skipped++; } window.alert(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`); refreshStudents(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); } }
+  async function handleImport(file: File) { try { setIsImporting(true); const result = await parseStudentImportFile(file); const existing = new Set(getStudents().map((student) => student.id.toLowerCase())); let imported = 0; let skipped = 0; for (const row of result.rows) { if (row.id && existing.has(row.id.toLowerCase())) { skipped++; continue; } const saved = addStudent(row); if (saved.success) { imported++; existing.add(row.id.toLowerCase()); } else skipped++; } window.alert(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`); refreshStudents(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); } }
 
   async function handleExport() {
     try {
