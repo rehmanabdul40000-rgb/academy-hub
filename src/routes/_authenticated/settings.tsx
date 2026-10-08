@@ -67,6 +67,7 @@ function SettingsPage() {
 
   // Form states
   const [academyName, setAcademyName] = useState(settings.academyName);
+  const [campusName, setCampusName] = useState(settings.campusName || "");
   const [adminDisplayName, setAdminDisplayName] = useState(settings.adminDisplayName);
   const [adminUsername, setAdminUsername] = useState(settings.adminUsername);
   const [adminPassword, setAdminPassword] = useState(settings.adminPassword || "");
@@ -76,6 +77,7 @@ function SettingsPage() {
   const [contactEmail, setContactEmail] = useState(settings.contactEmail || "");
   const [contactPhone, setContactPhone] = useState(settings.contactPhone || "");
   const [address, setAddress] = useState(settings.address || "");
+  const [bankName, setBankName] = useState(settings.bankName || "");
   const [bankAccountName, setBankAccountName] = useState(settings.bankAccountName || "");
   const [bankAccountNumber, setBankAccountNumber] = useState(settings.bankAccountNumber || "");
 
@@ -88,6 +90,7 @@ function SettingsPage() {
     setTheme(getWorkspaceTheme());
     setSettings(s);
     setAcademyName(s.academyName);
+    setCampusName(s.campusName || "");
     setAdminDisplayName(s.adminDisplayName);
     setAdminUsername(s.adminUsername);
     setAdminPassword(s.adminPassword || "");
@@ -97,6 +100,7 @@ function SettingsPage() {
     setContactEmail(s.contactEmail || "");
     setContactPhone(s.contactPhone || "");
     setAddress(s.address || "");
+    setBankName(s.bankName || "");
     setBankAccountName(s.bankAccountName || "");
     setBankAccountNumber(s.bankAccountNumber || "");
     const onTheme = (e: Event) => setTheme((e as CustomEvent<"dark" | "light">).detail || getWorkspaceTheme());
@@ -112,6 +116,7 @@ function SettingsPage() {
     e.preventDefault();
     const updated = saveSettings({
       academyName: academyName.trim() || settings.academyName,
+      campusName: campusName.trim(),
       adminDisplayName: adminDisplayName.trim() || settings.adminDisplayName,
       adminUsername: adminUsername.trim() || settings.adminUsername,
       adminPassword: adminPassword.trim() || settings.adminPassword,
@@ -120,6 +125,7 @@ function SettingsPage() {
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
       address: address.trim(),
+      bankName: bankName.trim(),
       bankAccountName: bankAccountName.trim(),
       bankAccountNumber: bankAccountNumber.trim(),
     });
@@ -154,6 +160,7 @@ function SettingsPage() {
       restoreWorkspaceBackup(backup);
       setSettings(backup.settings);
       setAcademyName(backup.settings.academyName);
+      setCampusName(backup.settings.campusName || "");
       setAdminDisplayName(backup.settings.adminDisplayName);
       setAdminUsername(backup.settings.adminUsername);
       setAdminPassword(backup.settings.adminPassword);
@@ -162,6 +169,7 @@ function SettingsPage() {
       setContactEmail(backup.settings.contactEmail || "");
       setContactPhone(backup.settings.contactPhone || "");
       setAddress(backup.settings.address || "");
+      setBankName(backup.settings.bankName || "");
       setBankAccountName(backup.settings.bankAccountName || "");
       setBankAccountNumber(backup.settings.bankAccountNumber || "");
       setBackupError("");
@@ -221,6 +229,11 @@ function SettingsPage() {
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Appears in header, navigation, and export documents.
                 </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground">Campus Name</label>
+                <input type="text" value={campusName} onChange={(e) => setCampusName(e.target.value)} placeholder="e.g. Sheikhupura Campus" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
               </div>
 
               <div>
@@ -287,6 +300,10 @@ function SettingsPage() {
                   placeholder="e.g. Sector F-7, Islamabad"
                   className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                 />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-foreground">Bank Name</label>
+                <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Meezan Bank / Bank Alfalah" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
               </div>
               <div>
                 <label className="text-xs font-medium text-foreground">Bank Account Name / Title</label>
