@@ -1,5 +1,5 @@
-import { CalendarDays, createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, PlusCircle, Save } from "lucide-react";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { ArrowLeft, CalendarDays, CheckCircle2, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import { can } from "@/features/auth/permissions";
