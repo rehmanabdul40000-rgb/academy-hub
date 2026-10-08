@@ -88,10 +88,10 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
                 <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.status}</td>
                 <td className="max-w-[220px] truncate px-4 py-4 text-center text-xs text-muted-foreground" title={s.notes || ""}>{s.notes || "—"}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-center"><div className="flex justify-center gap-1">
-                  {can("studentsView") && <Button variant="ghost" size="icon" title="View" onClick={() => setViewingStudent(s)}><Eye className="size-4" /></Button>}
-                  {can("payments") && <Button variant="ghost" size="icon" title="Collect Payment" onClick={() => setPayingStudent(s)} className="text-emerald-400"><ReceiptText className="size-4" /></Button>}
-                  {can("studentsEdit") && <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditingStudent(s)}><Edit className="size-4" /></Button>}
-                  {can("studentsDelete") && <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingStudent(s)} className="text-destructive"><Trash2 className="size-4" /></Button>}
+                  <Button variant="ghost" size="icon" title="View" onClick={() => setViewingStudent(s)}><Eye className="size-4" /></Button>
+                  <Button variant="ghost" size="icon" title="Collect Payment" onClick={() => setPayingStudent(s)} className="text-emerald-400"><ReceiptText className="size-4" /></Button>
+                  <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditingStudent(s)}><Edit className="size-4" /></Button>
+                  <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingStudent(s)} className="text-destructive"><Trash2 className="size-4" /></Button>
                 </div></td>
               </tr>)}</tbody>
             </table>
