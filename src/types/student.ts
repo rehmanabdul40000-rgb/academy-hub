@@ -67,6 +67,7 @@ export type NewStudentInput = {
   shiftTime?: string;
   phone?: string;
   phone2?: string;
+  bankName?: string;
   bankAccountName?: string;
   bankAccountNumber?: string;
   course?: string;
