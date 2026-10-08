@@ -613,7 +613,6 @@ export function ViewStudentModal({
               >
                 {student.name}
               </h3>
-              <p className="font-mono text-xs text-cyan-400">{student.id}</p>
             </div>
           </div>
           <button
@@ -641,16 +640,22 @@ export function ViewStudentModal({
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/80 bg-muted/20 p-3.5 text-xs">
             <div>
+              <p className="text-muted-foreground">Father Name</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.fatherName || "Not specified"}</p>
+            </div>
+            <div>
               <p className="text-muted-foreground">Course / Class</p>
               <p className="mt-0.5 font-medium text-foreground">
                 {student.course || "Not specified"}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground">Phone / WhatsApp</p>
-              <p className="mt-0.5 font-medium text-foreground">
-                {student.phone || "Not specified"}
-              </p>
+              <p className="text-muted-foreground">Contact No. 1</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.phone || "Not specified"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Contact No. 2</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.phone2 || "Not specified"}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Date Joined</p>
@@ -678,10 +683,16 @@ export function ViewStudentModal({
               Tuition Fee Breakdown
             </h4>
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Total Fees Billed:</span>
-              <span className="font-semibold text-foreground">
-                {formatCurrency(student.totalFees)}
-              </span>
+              <span className="text-muted-foreground">Admission Fee:</span>
+              <span className="font-semibold text-foreground">{formatCurrency(student.admissionFee)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Monthly Fee:</span>
+              <span className="font-semibold text-foreground">{formatCurrency(student.monthlyFee)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Initial Total Billed:</span>
+              <span className="font-semibold text-foreground">{formatCurrency(student.totalFees)}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Total Amount Paid:</span>
