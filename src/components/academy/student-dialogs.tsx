@@ -126,7 +126,7 @@ export function QuickPaymentModal({
                 Collect Payment
               </h3>
               <p className="text-xs text-muted-foreground">
-                {student.name} ({student.id})
+                {student.name}
               </p>
             </div>
           </div>
