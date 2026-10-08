@@ -92,7 +92,6 @@ function StudentsPage() {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
-        s.id.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
         (s.fatherName && s.fatherName.toLowerCase().includes(q)) ||
         (s.phone && s.phone.toLowerCase().includes(q)) ||
@@ -103,7 +102,7 @@ function StudentsPage() {
     });
   }, [students, statusFilter, genderFilter, searchQuery]);
 
-  async function handleImport(file: File) { try { setIsImporting(true); const result = await parseStudentImportFile(file); const existing = new Set(getStudents().map((student) => student.id.toLowerCase())); let imported = 0; let skipped = 0; for (const row of result.rows) { if (row.id && existing.has(row.id.toLowerCase())) { skipped++; continue; } const saved = addStudent(row); if (saved.success) { imported++; if (saved.student) existing.add(saved.student.id.toLowerCase()); } else skipped++; } window.alert(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`); refreshStudents(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); } }
+  async function handleImport(file: File) { try { setIsImporting(true); const result = await parseStudentImportFile(file); const existing = new Set(getStudents().map((student) => student.createdAt.toLowerCase())); let imported = 0; let skipped = 0; for (const row of result.rows) { const saved = addStudent(row); if (saved.success) { imported++; if (saved.student) existing.add(saved.student.createdAt.toLowerCase()); } else skipped++; } window.alert(`Import complete: ${imported} added, ${skipped} skipped, ${result.errors.length} invalid rows.`); refreshStudents(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to import this file."); } finally { setIsImporting(false); } }
 
   async function handleExport() {
     try {
@@ -253,6 +252,7 @@ function StudentsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <th className="px-5 py-3.5">Student Name</th>
+                  <th className="px-5 py-3.5">Father Name</th>
                   <th className="px-5 py-3.5">Gender</th>
                   <th className="px-5 py-3.5">Phone / WhatsApp</th>
                   <th className="px-5 py-3.5">Course / Class</th>
@@ -269,8 +269,8 @@ function StudentsPage() {
               <tbody className="divide-y divide-border/60">
                 {filteredStudents.map((s) => (
                   <tr
-                    key={s.id}
-                    id={`student-row-${s.id}`}
+                    key={s.createdAt}
+                    id={`student-row-${s.createdAt}`}
                     className="transition-colors hover:bg-muted/20"
                   >
                     {/* Name */}
@@ -288,6 +288,9 @@ function StudentsPage() {
                         </div>
                       </div>
                     </td>
+
+                    {/* Father Name */}
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">{s.fatherName || <span className="text-muted-foreground/40">—</span>}</td>
 
                     {/* Gender */}
                     <td className="whitespace-nowrap px-5 py-4 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.gender || "Unspecified"}</span></td>
