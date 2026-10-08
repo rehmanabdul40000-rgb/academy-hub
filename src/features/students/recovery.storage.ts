@@ -1,7 +1,7 @@
 import { getStudents, saveStudentsList } from "@/features/students/students.storage";
 import type { Student } from "@/types/student";
 
-const RECOVERY_STORAGE_KEY = "academy_hub_deleted_students_v1";
+const RECOVERY_STORAGE_KEY = "academy_hub_deleted_students_v2_fresh";
 
 export interface DeletedStudentRecord {
   recoveryId: string;
