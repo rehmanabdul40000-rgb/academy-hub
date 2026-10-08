@@ -635,6 +635,10 @@ export function ViewStudentModal({
               <p className="mt-0.5 font-medium text-foreground">{student.fatherName || "Not specified"}</p>
             </div>
             <div>
+              <p className="text-muted-foreground">Bank Account</p>
+              <p className="mt-0.5 font-medium text-foreground">{student.bankAccountName || "Not specified"}{student.bankAccountNumber ? ` · ${student.bankAccountNumber}` : ""}</p>
+            </div>
+            <div>
               <p className="text-muted-foreground">Course / Class</p>
               <p className="mt-0.5 font-medium text-foreground">
                 {student.course || "Not specified"}
