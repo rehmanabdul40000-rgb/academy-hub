@@ -67,33 +67,72 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           </div>
         </div>
         {filtered.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1250px] text-sm">
-              <thead><tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3 text-center">Student Name</th><th className="px-4 py-3 text-center">Father Name</th><th className="px-4 py-3 text-center">Gender</th><th className="px-4 py-3 text-center">Shift</th><th className="px-4 py-3 text-center">Class Time</th><th className="px-4 py-3 text-center">Phone / WhatsApp</th><th className="px-4 py-3 text-center">Course / Class</th><th className="px-4 py-3 text-center">Date Joined</th><th className="px-4 py-3 text-center">Saved At</th><th className="px-4 py-3 text-center">Total Fees</th><th className="px-4 py-3 text-center">Paid</th><th className="px-4 py-3 text-center">Remaining</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-center">Notes</th><th className="px-4 py-3 text-center">Actions</th>
-              </tr></thead>
-              <tbody className="divide-y divide-border/60">{filtered.map((s) => <tr key={s.createdAt} className="hover:bg-muted/20">
-                
-                <td className="whitespace-nowrap px-4 py-4 text-center font-semibold">{s.name}</td><td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.fatherName || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.gender || "Unspecified"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.shift || "Unspecified"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.shiftTime || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.phone || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.course || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.dateJoined || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{getStudentSavedAt(s)}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold">{formatCurrency(s.totalFees)}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold text-emerald-400">{formatCurrency(s.amountPaid)}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-xs font-semibold text-amber-400">{formatCurrency(s.remainingFees)}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center text-xs">{s.status}</td>
-                <td className="max-w-[220px] truncate px-4 py-4 text-center text-xs text-muted-foreground" title={s.notes || ""}>{s.notes || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-center"><div className="flex justify-center gap-1">
-                  <Button variant="ghost" size="icon" title="View" onClick={() => setViewingStudent(s)}><Eye className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" title="Collect Payment" onClick={() => setPayingStudent(s)} className="text-emerald-400"><ReceiptText className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditingStudent(s)}><Edit className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingStudent(s)} className="text-destructive"><Trash2 className="size-4" /></Button>
-                </div></td>
-              </tr>)}</tbody>
+          <div className="responsive-data-table overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-5 py-3.5">Student Name</th>
+                  <th className="px-5 py-3.5">Father Name</th>
+                  <th className="px-5 py-3.5">Gender</th>
+                  <th className="px-5 py-3.5">Phone / WhatsApp</th>
+                  <th className="px-5 py-3.5">Course / Class</th>
+                  <th className="px-5 py-3.5">Date Joined</th>
+                  <th className="px-5 py-3.5">Saved At</th>
+                  <th className="px-5 py-3.5 text-right">Total Fees</th>
+                  <th className="px-5 py-3.5 text-right">Paid</th>
+                  <th className="px-5 py-3.5 text-right">Remaining</th>
+                  <th className="px-5 py-3.5 text-center">Status</th>
+                  <th className="px-5 py-3.5">Notes</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {filtered.map((s) => (
+                  <tr key={s.createdAt} className="transition-colors hover:bg-muted/20">
+                    <td className="whitespace-nowrap px-5 py-4 font-medium text-foreground">
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid size-8 place-items-center rounded-lg bg-cyan-500/10 text-xs font-bold text-cyan-400">{s.name.charAt(0).toUpperCase()}</span>
+                        <span className="font-semibold">{s.name}</span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">{s.fatherName || <span className="text-muted-foreground/40">—</span>}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-xs"><span className="rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.gender || "Unspecified"}</span></td>
+                    <td className="whitespace-nowrap px-5 py-4 text-xs">
+                      <div className="space-y-1">
+                        {s.phone ? <a href={`tel:${s.phone}`} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-cyan-400"><span>{s.phone}</span></a> : <span className="text-muted-foreground/40">—</span>}
+                        {s.phone2 && <div className="text-[11px] text-muted-foreground">{s.phone2}</div>}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-muted-foreground">{s.course ? <span className="whitespace-nowrap rounded-md border border-border/80 bg-muted/40 px-2 py-1">{s.course}</span> : <span className="text-muted-foreground/40">—</span>}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">{s.dateJoined || <span className="text-muted-foreground/40">—</span>}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">{getStudentSavedAt(s)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-right font-mono text-xs font-semibold text-foreground">{formatCurrency(s.totalFees)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-right font-mono text-xs font-semibold text-emerald-400">{formatCurrency(s.amountPaid)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-right font-mono text-xs font-semibold text-amber-400">{formatCurrency(s.remainingFees)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-center">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        s.status === "Paid" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                        s.status === "Partial" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                        "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                      }`}>
+                        <span className={`size-1.5 rounded-full ${
+                          s.status === "Paid" ? "bg-emerald-400" : s.status === "Partial" ? "bg-blue-400" : "bg-amber-400"
+                        }`} />
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="max-w-[180px] truncate px-5 py-4 text-xs text-muted-foreground" title={s.notes || ""}>{s.notes || <span className="text-muted-foreground/40">—</span>}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" title="View Details" aria-label="View Details" onClick={() => setViewingStudent(s)} className="size-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"><Eye className="size-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Collect Fee / Record Payment" aria-label="Collect Fee / Record Payment" onClick={() => setPayingStudent(s)} className="size-8 rounded-lg text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"><ReceiptText className="size-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Edit Student" aria-label="Edit Student" onClick={() => setEditingStudent(s)} className="size-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"><Edit className="size-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Delete Student" aria-label="Delete Student" onClick={() => setDeletingStudent(s)} className="size-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         ) : <div className="p-12 text-center text-sm text-muted-foreground">{search ? "No matching records found." : meta.empty}</div>}
