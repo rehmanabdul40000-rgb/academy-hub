@@ -52,7 +52,7 @@ function buildMonthlySchedule(monthlyFee: number, dateJoined?: string, existing?
   const joined = dateJoined ? new Date(dateJoined) : now;
   const start = Number.isNaN(joined.getTime()) ? now : joined;
   let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  const end = new Date(start.getFullYear(), start.getMonth() + 11, 1);
+  const existingEnd = (existing || []).reduce((latest, item) => item.monthKey > latest ? item.monthKey : latest, monthKeyFromDate(new Date(start.getFullYear(), start.getMonth() + 11, 1)));\n  const [endYear, endMonth] = existingEnd.split("-").map(Number);\n  const end = new Date(endYear, endMonth - 1, 1);
   const records: MonthlyFeeRecord[] = [];
   while (cursor <= end && records.length < 36) {
     const key = monthKeyFromDate(cursor);
@@ -176,6 +176,22 @@ export function getMonthlyFeeHistory(student: Student): MonthlyFeeRecord[] {
   return buildMonthlySchedule(student.monthlyFee, student.dateJoined, student.monthlyFees)
     .filter((item) => item.monthKey <= currentKey)
     .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+}
+
+export function addNextMonthMonthlyRecord(recordKey: string): { success: boolean; error?: string; student?: Student } {
+  const all = getStudents();
+  const index = all.findIndex((item) => item.createdAt === recordKey);
+  if (index < 0) return { success: false, error: "Student not found." };
+  const student = all[index]!;
+  const existing = [...(student.monthlyFees || [])].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  const currentKey = monthKeyFromDate(new Date());
+  const nextKey = addMonths(existing.length ? existing[existing.length - 1]!.monthKey : currentKey, 1);
+  if (existing.some((fee) => fee.monthKey === nextKey)) return { success: false, error: "This month’s fee record already exists." };
+  const next = createMonthlyRecord(nextKey, student.monthlyFee);
+  const updated = normalizeStudent({ ...student, monthlyFees: [...existing, next], updatedAt: new Date().toISOString() });
+  all[index] = updated;
+  saveStudentsList(all);
+  return { success: true, student: updated };
 }
 
 export function getOutstandingMonthlyAmount(student: Student): number {
