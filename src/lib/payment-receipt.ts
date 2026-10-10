@@ -1,5 +1,6 @@
 import { formatCurrencyWithLabel, getSettings } from "@/features/settings/settings.storage";
 import type { PaymentRecord, Student } from "@/types/student";
+import { getStudentById } from "@/features/students/students.storage";
 
 function escapeHtml(value: string): string {
   return String(value ?? "").replace(/[&<>'"]/g, (character) => {
@@ -10,6 +11,18 @@ function escapeHtml(value: string): string {
 
 export function printPaymentReceipt(student: Student, payment: PaymentRecord): void {
   if (typeof window === "undefined") return;
+  // Always build the receipt from the latest saved student/payment, not the stale object
+  // captured when the payment-history modal first rendered.
+  const latestStudent = getStudentById(student.createdAt) || student;
+  const latestPayment =
+    latestStudent.payments?.find((item) => item.id === payment.id) ||
+    latestStudent.payments?.find((item) =>
+      item.feeType === payment.feeType && item.monthKey === payment.monthKey
+    ) ||
+    payment;
+  student = latestStudent;
+  payment = latestPayment;
+
   const settings = getSettings();
   const currencyLabel = settings.currencyLabel || "Rs";
   const money = (amount: number) => formatCurrencyWithLabel(amount, currencyLabel);
@@ -17,7 +30,8 @@ export function printPaymentReceipt(student: Student, payment: PaymentRecord): v
     ? new Date(Number(payment.monthKey.slice(0, 4)), Number(payment.monthKey.slice(5, 7)) - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : "";
 
-  const receiptWindow = window.open("", "academy-hub-payment-receipt", "width=900,height=1000");
+  // Each receipt gets its own window so one student's editor can never retain another student's form state.
+  const receiptWindow = window.open("", "_blank", "width=900,height=1000");
   if (!receiptWindow) return;
 
   const initial = {
