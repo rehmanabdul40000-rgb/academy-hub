@@ -71,6 +71,36 @@ function normalizeStudent(raw: Student): Student {
   const amountPaid = Math.max(0, Number(cleanRaw.amountPaid || 0));
   const totalFees = Number(cleanRaw.totalFees ?? (admissionFee + monthlyFee)) || 0;
   const monthlyFees = buildMonthlySchedule(monthlyFee, cleanRaw.dateJoined, cleanRaw.monthlyFees);
+  const normalizedPayments = cleanRaw.payments?.map((payment) => {
+    const { studentId: _legacyStudentId, ...cleanPayment } = payment as PaymentRecord & { studentId?: string };
+    return cleanPayment;
+  }) || [];
+  // Repair older data where the initial admission and first-month payments were saved as two receipts.
+  const firstMonthKey = monthlyFees[0]?.monthKey;
+  if (totalFees === admissionFee + monthlyFee && firstMonthKey) {
+    const initialBillReceipts = normalizedPayments.filter((payment) =>
+      payment.monthKey === firstMonthKey &&
+      (payment.feeType === "Admission Fee" || payment.feeType === "Monthly Fee")
+    );
+    const admissionReceipt = initialBillReceipts.find((payment) => payment.feeType === "Admission Fee");
+    if (admissionReceipt && initialBillReceipts.some((payment) => payment.feeType === "Monthly Fee")) {
+      const combinedAmount = initialBillReceipts.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0)), 0);
+      const latestReceipt = [...initialBillReceipts].sort((a, b) => `${a.paymentDate} ${a.paymentTime}`.localeCompare(`${b.paymentDate} ${b.paymentTime}`)).at(-1)!;
+      const repairedReceipt: PaymentRecord = {
+        ...admissionReceipt,
+        amount: combinedAmount,
+        paymentDate: latestReceipt.paymentDate,
+        paymentTime: latestReceipt.paymentTime,
+        newPaid: Math.min(totalFees, combinedAmount),
+        newRemaining: computeRemaining(totalFees, Math.min(totalFees, combinedAmount)),
+        feeType: "Admission Fee",
+        monthKey: firstMonthKey,
+      };
+      const initialIds = new Set(initialBillReceipts.map((payment) => payment.id));
+      const otherPayments = normalizedPayments.filter((payment) => !initialIds.has(payment.id));
+      normalizedPayments.splice(0, normalizedPayments.length, repairedReceipt, ...otherPayments);
+    }
+  }
   return {
     ...cleanRaw,
     name: String(cleanRaw.name || "").trim(),
@@ -88,7 +118,7 @@ function normalizeStudent(raw: Student): Student {
     remainingFees: computeRemaining(totalFees, amountPaid),
     status: computeStudentStatus(totalFees, amountPaid),
     monthlyFees,
-    payments: cleanRaw.payments?.map((payment) => { const { studentId: _legacyStudentId, ...cleanPayment } = payment as PaymentRecord & { studentId?: string }; return cleanPayment; }) || undefined,
+    payments: normalizedPayments.length ? normalizedPayments : undefined,
   };
 }
 
