@@ -31,6 +31,7 @@ import {
   getMonthlyFeeHistory,
   getOutstandingMonthlyAmount,
   addNextMonthMonthlyRecord,
+  saveMonthlyFeeRecord,
   getStudentSavedAt,
   recordQuickPayment,
   updateStudent,
@@ -582,6 +583,66 @@ export function EditStudentModal({
 }
 
 // View Student Modal (Student Detail View)
+function MonthlyFeeEditorModal({ student, initialMonth, onClose, onEditStudent }: { student: Student; initialMonth: string; onClose: () => void; onEditStudent: () => void }) {
+  const [monthKey, setMonthKey] = useState(initialMonth);
+  const [dueAmount, setDueAmount] = useState(String(student.monthlyFee || 0));
+  const [paidAmount, setPaidAmount] = useState("0");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const existing = (student.monthlyFees || []).find((fee) => fee.monthKey === monthKey);
+    setDueAmount(String(existing?.dueAmount ?? student.monthlyFee ?? 0));
+    setPaidAmount(String(existing?.paidAmount ?? 0));
+    setError("");
+  }, [student, monthKey]);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const due = Number(dueAmount);
+    const paid = Number(paidAmount);
+    setSaving(true);
+    const result = saveMonthlyFeeRecord(student.createdAt, monthKey, due, paid);
+    setSaving(false);
+    if (!result.success) { setError(result.error || "Could not save this month's fee."); return; }
+    window.alert("Monthly fee record saved. Close and reopen student details to see the updated record.");
+    onClose();
+  }
+
+  const monthLabel = monthKey ? new Date(Number(monthKey.slice(0, 4)), Number(monthKey.slice(5, 7)) - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "Select month";
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 sm:p-6">
+      <button aria-label="Close monthly fee editor backdrop" className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div role="dialog" aria-modal="true" aria-labelledby="monthly-fee-editor-title" className="relative w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-border pb-4">
+          <div><h3 id="monthly-fee-editor-title" className="font-display text-lg font-semibold text-foreground">Monthly Fee — {student.name}</h3><p className="mt-1 text-xs text-muted-foreground">Edit the month and payment without creating another student.</p></div>
+          <button onClick={onClose} aria-label="Close monthly fee editor" className="rounded-lg p-1 text-muted-foreground hover:bg-accent"><X className="size-4" /></button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-border/80 bg-muted/20 p-3.5 text-xs sm:grid-cols-3">
+          <div><p className="text-muted-foreground">Student</p><p className="mt-1 font-semibold text-foreground">{student.name}</p></div>
+          <div><p className="text-muted-foreground">Father Name</p><p className="mt-1 font-semibold text-foreground">{student.fatherName || "—"}</p></div>
+          <div><p className="text-muted-foreground">Class / Course</p><p className="mt-1 font-semibold text-foreground">{student.course || "—"}</p></div>
+          <div><p className="text-muted-foreground">Shift</p><p className="mt-1 font-semibold text-foreground">{student.shift}</p></div>
+          <div><p className="text-muted-foreground">Contact 1 / 2</p><p className="mt-1 font-semibold text-foreground">{student.phone || "—"} / {student.phone2 || "—"}</p></div>
+          <div><p className="text-muted-foreground">Bank</p><p className="mt-1 font-semibold text-foreground">{student.bankName || "—"} · {student.bankAccountName || "—"}</p></div>
+        </div>
+        <div className="mt-3 flex justify-end"><Button type="button" variant="outline" size="sm" onClick={onEditStudent}><Edit3 className="mr-1.5 size-3.5" />Edit Student Details</Button></div>
+        <form onSubmit={submit} className="mt-4 space-y-4">
+          <div><label className="text-xs font-medium text-foreground">Fee Month *</label><input required type="month" value={monthKey} onChange={(e) => setMonthKey(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" /><p className="mt-1 text-[11px] text-muted-foreground">Selected: {monthLabel}. Next month is preselected, but you can choose another month.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><label className="text-xs font-medium text-foreground">Monthly Fee Due (Rs) *</label><input required min="0" step="any" type="number" value={dueAmount} onChange={(e) => setDueAmount(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div>
+            <div><label className="text-xs font-medium text-foreground">Amount Paid (Rs) *</label><input required min="0" step="any" type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs"><div className="flex justify-between"><span className="text-muted-foreground">Remaining</span><strong>{formatCurrency(Math.max(0, (Number(dueAmount) || 0) - (Number(paidAmount) || 0)))}</strong></div><div className="mt-1 flex justify-between"><span className="text-muted-foreground">Status</span><strong className={(Number(paidAmount) || 0) >= (Number(dueAmount) || 0) && (Number(dueAmount) || 0) > 0 ? "text-emerald-400" : (Number(paidAmount) || 0) > 0 ? "text-blue-400" : "text-amber-400"}>{computeStudentStatus(Number(dueAmount) || 0, Number(paidAmount) || 0)}</strong></div></div>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving} className="bg-cyan-600 text-white hover:bg-cyan-500">{saving ? "Saving..." : "Save Monthly Fee"}</Button></div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function ViewStudentModal({
   student,
   open,
@@ -597,6 +658,8 @@ export function ViewStudentModal({
   onQuickPayment: (student: Student) => void;
   onDelete: (student: Student) => void;
 }) {
+  const [monthEditorKey, setMonthEditorKey] = useState<string | null>(null);
+
   if (!open || !student) return null;
 
   const statusColor =
@@ -785,11 +848,10 @@ export function ViewStudentModal({
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" className="gap-1.5 bg-cyan-600 text-white hover:bg-cyan-500" onClick={() => {
                 const result = addNextMonthMonthlyRecord(student.createdAt);
-                if (!result.success) { window.alert(result.error || "Could not add next month fee."); return; }
-                window.alert("Next month fee record added. Reopen this student's details to view the updated month-wise list.");
-                onClose();
+                if (!result.success || !result.monthKey) { window.alert(result.error || "Could not open next month fee."); return; }
+                setMonthEditorKey(result.monthKey);
               }}>
-                <Calendar className="size-3.5" /> Add Next Month Fee
+                <Calendar className="size-3.5" /> Add / Edit Next Month Fee
               </Button>
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void exportStudentMonthlyHistory(student)}>
                 <FileText className="size-3.5" /> Export 12-Month Excel
@@ -861,6 +923,7 @@ export function ViewStudentModal({
           </div>
         </div>
       </div>
+      {monthEditorKey && <MonthlyFeeEditorModal student={student} initialMonth={monthEditorKey} onClose={() => setMonthEditorKey(null)} onEditStudent={() => { const current = student; setMonthEditorKey(null); onClose(); onEdit(current); }} />}
     </div>
   );
 }
