@@ -22,6 +22,7 @@ import {
   confirmStudentDeletion,
 } from "@/features/students/recovery.storage";
 import { printPaymentReceipt } from "@/lib/payment-receipt";
+import { exportStudentMonthlyHistory } from "@/lib/excel-export";
 import {
   computeRemaining,
   computeStudentStatus,
@@ -29,6 +30,7 @@ import {
   getPaymentHistory,
   getMonthlyFeeHistory,
   getOutstandingMonthlyAmount,
+  addNextMonthMonthlyRecord,
   getStudentSavedAt,
   recordQuickPayment,
   updateStudent,
@@ -779,6 +781,19 @@ export function ViewStudentModal({
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Month-wise Fee Record</h4>
               <span className="text-[11px] text-muted-foreground">{getMonthlyFeeHistory(student).length} month(s)</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="button" size="sm" className="gap-1.5 bg-cyan-600 text-white hover:bg-cyan-500" onClick={() => {
+                const result = addNextMonthMonthlyRecord(student.createdAt);
+                if (!result.success) { window.alert(result.error || "Could not add next month fee."); return; }
+                window.alert("Next month fee record added. Reopen this student's details to view the updated month-wise list.");
+                onClose();
+              }}>
+                <Calendar className="size-3.5" /> Add Next Month Fee
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void exportStudentMonthlyHistory(student)}>
+                <FileText className="size-3.5" /> Export 12-Month Excel
+              </Button>
             </div>
             <div className="mt-3 space-y-2">
               {getMonthlyFeeHistory(student).map((fee) => (
