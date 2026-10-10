@@ -85,7 +85,8 @@ function normalizeStudent(raw: Student): Student {
     const admissionReceipt = initialBillReceipts.find((payment) => payment.feeType === "Admission Fee");
     if (admissionReceipt && initialBillReceipts.some((payment) => payment.feeType === "Monthly Fee")) {
       const combinedAmount = initialBillReceipts.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0)), 0);
-      const latestReceipt = [...initialBillReceipts].sort((a, b) => `${a.paymentDate} ${a.paymentTime}`.localeCompare(`${b.paymentDate} ${b.paymentTime}`)).at(-1)!;
+      const sortedInitialReceipts = [...initialBillReceipts].sort((a, b) => `${a.paymentDate} ${a.paymentTime}`.localeCompare(`${b.paymentDate} ${b.paymentTime}`));
+      const latestReceipt = sortedInitialReceipts[sortedInitialReceipts.length - 1]!;
       const repairedReceipt: PaymentRecord = {
         ...admissionReceipt,
         amount: combinedAmount,
