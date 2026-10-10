@@ -288,6 +288,7 @@ function StudentsPage() {
               if (topScrollRef.current) topScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
               requestAnimationFrame(() => { syncingScroll.current = false; });
             }}
+          >
             <table id="students-directory-table" className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
