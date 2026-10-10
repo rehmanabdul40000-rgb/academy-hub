@@ -52,7 +52,8 @@ function buildMonthlySchedule(monthlyFee: number, dateJoined?: string, existing?
   const joined = dateJoined ? new Date(dateJoined) : now;
   const start = Number.isNaN(joined.getTime()) ? now : joined;
   let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  const existingEnd = (existing || []).reduce((latest, item) => item.monthKey > latest ? item.monthKey : latest, monthKeyFromDate(new Date(start.getFullYear(), start.getMonth() + 11, 1)));\n  const [endYear, endMonth] = existingEnd.split("-").map(Number);\n  const end = new Date(endYear, endMonth - 1, 1);
+  const existingEnd = (existing || []).reduce((latest, item) => item.monthKey > latest ? item.monthKey : latest, monthKeyFromDate(new Date(start.getFullYear(), start.getMonth() + 11, 1)));
+  const [endYear, endMonth] = existingEnd.split("-").map(Number);\n  const end = new Date(endYear, endMonth - 1, 1);
   const records: MonthlyFeeRecord[] = [];
   while (cursor <= end && records.length < 36) {
     const key = monthKeyFromDate(cursor);
