@@ -174,7 +174,9 @@ export function getPaymentHistory(student: Student): PaymentRecord[] {
 }
 
 export function getMonthlyFeeHistory(student: Student): MonthlyFeeRecord[] {
+  const currentKey = monthKeyFromDate(new Date());
   return buildMonthlySchedule(student.monthlyFee, student.dateJoined, student.monthlyFees)
+    .filter((item) => item.monthKey <= currentKey)
     .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 }
 
