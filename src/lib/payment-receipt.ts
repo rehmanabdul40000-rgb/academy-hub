@@ -48,6 +48,8 @@ export function printPaymentReceipt(student: Student, payment: PaymentRecord): v
     status: payment.newRemaining === 0 ? "Paid" : payment.amount > 0 ? "Partial" : "Pending",
   };
 
+  // Reusing the named receipt window is intentional, but its old document must be cleared first.
+  receiptWindow.document.open();
   receiptWindow.document.write(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><title>Fee Receipt - ${escapeHtml(initial.studentName)}</title>
 <style>
