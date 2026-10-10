@@ -52,6 +52,40 @@ export async function exportStudentSegmentToExcel(students: Student[], segmentNa
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+export async function exportStudentMonthlyHistory(student: Student) {
+  const settings = getSettings();
+  const academyName = settings.academyName?.trim() || "Academy Hub";
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = settings.adminDisplayName || "Admin";
+  const sheet = workbook.addWorksheet("12-Month Fee Record", { views: [{ state: "frozen", ySplit: 4 }] });
+  styleTitle(sheet, `${academyName.toUpperCase()} - ${student.name.toUpperCase()} MONTHLY FEES`, 7);
+  styleSubtitle(sheet, "STUDENT-WISE 12-MONTH FEE RECORD", 7);
+  styleMeta(sheet, `Student: ${student.name} | Father: ${student.fatherName || "—"} | Contact: ${student.phone || "—"} | Monthly Fee: ${student.monthlyFee}`, 7);
+  const header = sheet.getRow(4);
+  header.values = ["Month", "Month Key", "Monthly Fee", "Paid", "Remaining", "Status", "Payment Date"];
+  styleHeader(header);
+  const records = [...(student.monthlyFees || [])].sort((a, b) => a.monthKey.localeCompare(b.monthKey)).slice(0, 12);
+  records.forEach((fee, index) => {
+    const paymentDate = fee.paidAt ? new Date(fee.paidAt).toLocaleDateString("en-GB") : "—";
+    const row = sheet.addRow([fee.monthLabel, fee.monthKey, fee.dueAmount, fee.paidAmount, fee.remainingAmount, fee.status, paymentDate]);
+    styleDataRow(row, index % 2 === 1, [3, 4, 5]);
+    const status = row.getCell(6);
+    status.font = { bold: true, color: { argb: fee.status === "Paid" ? "FF15803D" : fee.status === "Partial" ? "FF1D4ED8" : "FFB45309" } };
+  });
+  sheet.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: 7 } };
+  sheet.columns = [{ width: 24 }, { width: 16 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 14 }, { width: 18 }];
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${student.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_12_Month_Fee_Record.xlsx`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export async function exportAcademyToExcel(students: Student[], options?: { sections?: WorkspaceSection[] }) {
   const settings = getSettings(); const academyName = settings.academyName?.trim() || "Academy Hub"; const currencyLabel = settings.currencyLabel || "Rs"; const session = settings.academicSession || "—"; const admin = settings.adminDisplayName || "Admin";
   const workbook = new ExcelJS.Workbook(); workbook.creator = admin; workbook.created = new Date(); workbook.modified = new Date();
