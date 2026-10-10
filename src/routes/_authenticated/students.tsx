@@ -13,7 +13,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import {
   DeleteStudentDialog,
@@ -56,6 +56,25 @@ function StudentsPage() {
   const [genderFilter, setGenderFilter] = useState<"All" | StudentGender>("All");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const syncingScroll = useRef(false);
+
+  useEffect(() => {
+    const tableArea = tableScrollRef.current;
+    if (!tableArea) return;
+    const updateWidth = () => setTableScrollWidth(tableArea.scrollWidth);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(tableArea);
+    if (tableArea.firstElementChild) observer.observe(tableArea.firstElementChild);
+    window.addEventListener("resize", updateWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, [students.length, searchQuery, statusFilter, genderFilter]);
 
   // Dialog states
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -247,7 +266,28 @@ function StudentsPage() {
 
         {/* Table Content */}
         {filteredStudents.length > 0 ? (
-          <div className="responsive-data-table overflow-x-auto">
+          <div
+            ref={topScrollRef}
+            aria-label="Horizontal scroll for student columns"
+            className="sticky top-16 z-20 overflow-x-auto overflow-y-hidden border-b border-border bg-card/95 shadow-sm backdrop-blur"
+            onScroll={(event) => {
+              if (syncingScroll.current) return;
+              syncingScroll.current = true;
+              if (tableScrollRef.current) tableScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              requestAnimationFrame(() => { syncingScroll.current = false; });
+            }}
+          >
+            <div style={{ width: tableScrollWidth, minWidth: "100%", height: 14 }} />
+          </div>
+          <div
+            ref={tableScrollRef}
+            className="responsive-data-table overflow-x-auto"
+            onScroll={(event) => {
+              if (syncingScroll.current) return;
+              syncingScroll.current = true;
+              if (topScrollRef.current) topScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              requestAnimationFrame(() => { syncingScroll.current = false; });
+            }}
             <table id="students-directory-table" className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
