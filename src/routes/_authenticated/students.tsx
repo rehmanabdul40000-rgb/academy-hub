@@ -266,6 +266,7 @@ function StudentsPage() {
 
         {/* Table Content */}
         {filteredStudents.length > 0 ? (
+          <>
           <div
             ref={topScrollRef}
             aria-label="Horizontal scroll for student columns"
@@ -469,6 +470,7 @@ function StudentsPage() {
               </tbody>
             </table>
           </div>
+          </>
         ) : (
           <div className="p-12 text-center">
             <Users className="mx-auto size-10 text-muted-foreground/40" />
