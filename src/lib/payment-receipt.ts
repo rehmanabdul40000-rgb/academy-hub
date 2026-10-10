@@ -159,11 +159,13 @@ function fitCopies(){
   content.style.transform="none";
   content.style.width="100%";
   content.style.transformOrigin="top left";
-  const available=Math.max(1,copy.clientHeight-8);
+  // Do not measure copy.clientHeight here: beforeprint can run before print CSS
+  // applies the fixed 141mm height, making the old measurement falsely report no overflow.
+  // Use the actual A4 copy height converted to CSS pixels, with room for padding.
+  const available=Math.floor(141*96/25.4)-18;
   const naturalHeight=Math.max(content.scrollHeight,content.getBoundingClientRect().height);
-  if(naturalHeight>available){
-   // No minimum scale: long notes or edited values must shrink enough to stay inside the copy.
-   const scale=Math.max(0.1,available/naturalHeight);
+  const scale=naturalHeight>available ? Math.max(0.08,available/naturalHeight) : 1;
+  if(scale<1){
    content.style.width="calc(100% / "+scale+")";
    content.style.transform="scale("+scale+")";
   }
@@ -173,7 +175,7 @@ function render(){
  el("sheet").innerHTML=makeCopy("ACADEMY / CAMPUS COPY",false)+'<div class="cut"><span>✂ CUT / SEPARATE HERE</span></div>'+makeCopy("STUDENT COPY",true);
  requestAnimationFrame(()=>requestAnimationFrame(fitCopies));
 }
-window.addEventListener("beforeprint",fitCopies);
+window.addEventListener("beforeprint",()=>{fitCopies()});
 window.addEventListener("afterprint",()=>{document.querySelectorAll(".copyContent").forEach(content=>{content.style.transform="none";content.style.width="100%"})});
 render();
 </script></body></html>`);
