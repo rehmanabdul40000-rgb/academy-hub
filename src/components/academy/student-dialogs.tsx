@@ -583,7 +583,7 @@ export function EditStudentModal({
 }
 
 // View Student Modal (Student Detail View)
-function MonthlyFeeEditorModal({ student, initialMonth, onClose, onEditStudent }: { student: Student; initialMonth: string; onClose: () => void; onEditStudent: () => void }) {
+function MonthlyFeeEditorModal({ student, initialMonth, onClose, onEditStudent, onSaved }: { student: Student; initialMonth: string; onClose: () => void; onEditStudent: () => void; onSaved: (student: Student) => void }) {
   const [monthKey, setMonthKey] = useState(initialMonth);
   const [dueAmount, setDueAmount] = useState(String(student.monthlyFee || 0));
   const [paidAmount, setPaidAmount] = useState("0");
@@ -605,7 +605,7 @@ function MonthlyFeeEditorModal({ student, initialMonth, onClose, onEditStudent }
     const result = saveMonthlyFeeRecord(student.createdAt, monthKey, due, paid);
     setSaving(false);
     if (!result.success) { setError(result.error || "Could not save this month's fee."); return; }
-    window.alert("Monthly fee record saved. Close and reopen student details to see the updated record.");
+    if (result.student) onSaved(result.student);
     onClose();
   }
 
@@ -650,6 +650,7 @@ export function ViewStudentModal({
   onEdit,
   onQuickPayment,
   onDelete,
+  onStudentUpdated,
 }: {
   student: Student | null;
   open: boolean;
@@ -657,6 +658,7 @@ export function ViewStudentModal({
   onEdit: (student: Student) => void;
   onQuickPayment: (student: Student) => void;
   onDelete: (student: Student) => void;
+  onStudentUpdated?: (student: Student) => void;
 }) {
   const [monthEditorKey, setMonthEditorKey] = useState<string | null>(null);
 
@@ -923,7 +925,7 @@ export function ViewStudentModal({
           </div>
         </div>
       </div>
-      {monthEditorKey && <MonthlyFeeEditorModal student={student} initialMonth={monthEditorKey} onClose={() => setMonthEditorKey(null)} onEditStudent={() => { const current = student; setMonthEditorKey(null); onClose(); onEdit(current); }} />}
+      {monthEditorKey && <MonthlyFeeEditorModal student={student} initialMonth={monthEditorKey} onClose={() => setMonthEditorKey(null)} onSaved={(updated) => onStudentUpdated?.(updated)} onEditStudent={() => { const current = student; setMonthEditorKey(null); onClose(); onEdit(current); }} />}
     </div>
   );
 }
