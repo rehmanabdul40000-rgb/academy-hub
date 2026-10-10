@@ -280,7 +280,7 @@ function StudentsPage() {
                           {s.name.charAt(0).toUpperCase()}
                         </span>
                         <div>
-                          <p className="font-semibold text-foreground">{s.name}</p>
+                          <p className="flex items-center gap-2 font-semibold text-foreground"><span aria-label={`Payment status: ${s.status}`} title={`Payment status: ${s.status}`} className={`inline-block size-2.5 shrink-0 rounded-full ${s.status === "Paid" ? "bg-emerald-400" : s.status === "Partial" ? "bg-blue-400" : "bg-amber-400"}`} />{s.name}</p>
                           
                           {s.phone && (
                             <p className="text-[11px] text-muted-foreground sm:hidden">{s.phone}</p>
