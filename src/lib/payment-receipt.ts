@@ -152,9 +152,29 @@ function makeCopy(label, studentCopy){
  '<div class="sign"><div class="line">Received / Checked By</div><div class="line">Student / Parent Signature</div></div>'+
  '</div></section>';
 }
-function fitCopies(){document.querySelectorAll(".copy").forEach(copy=>{const content=copy.querySelector(".copyContent");if(!content)return;content.style.transform="scale(1)";content.style.width="100%";const available=copy.clientHeight-copy.clientHeight*0.035;const needed=content.scrollHeight;if(needed>available&&needed>0){const scale=Math.max(0.72,available/needed);content.style.width="calc(100% / "+scale+")";content.style.transform="scale("+scale+")"}})}
-function render(){el("sheet").innerHTML=makeCopy("ACADEMY / CAMPUS COPY",false)+'<div class="cut"><span>✂ CUT / SEPARATE HERE</span></div>'+makeCopy("STUDENT COPY",true);requestAnimationFrame(fitCopies)}
+function fitCopies(){
+ document.querySelectorAll(".copy").forEach(copy=>{
+  const content=copy.querySelector(".copyContent");
+  if(!content)return;
+  content.style.transform="none";
+  content.style.width="100%";
+  content.style.transformOrigin="top left";
+  const available=Math.max(1,copy.clientHeight-8);
+  const naturalHeight=Math.max(content.scrollHeight,content.getBoundingClientRect().height);
+  if(naturalHeight>available){
+   // No minimum scale: long notes or edited values must shrink enough to stay inside the copy.
+   const scale=Math.max(0.1,available/naturalHeight);
+   content.style.width="calc(100% / "+scale+")";
+   content.style.transform="scale("+scale+")";
+  }
+ });
+}
+function render(){
+ el("sheet").innerHTML=makeCopy("ACADEMY / CAMPUS COPY",false)+'<div class="cut"><span>✂ CUT / SEPARATE HERE</span></div>'+makeCopy("STUDENT COPY",true);
+ requestAnimationFrame(()=>requestAnimationFrame(fitCopies));
+}
 window.addEventListener("beforeprint",fitCopies);
+window.addEventListener("afterprint",()=>{document.querySelectorAll(".copyContent").forEach(content=>{content.style.transform="none";content.style.width="100%"})});
 render();
 </script></body></html>`);
   receiptWindow.document.close();
