@@ -174,23 +174,53 @@ export function getPaymentHistory(student: Student): PaymentRecord[] {
 }
 
 export function getMonthlyFeeHistory(student: Student): MonthlyFeeRecord[] {
-  const currentKey = monthKeyFromDate(new Date());
   return buildMonthlySchedule(student.monthlyFee, student.dateJoined, student.monthlyFees)
-    .filter((item) => item.monthKey <= currentKey)
     .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 }
 
-export function addNextMonthMonthlyRecord(recordKey: string): { success: boolean; error?: string; student?: Student } {
+export function addNextMonthMonthlyRecord(recordKey: string): { success: boolean; error?: string; student?: Student; monthKey?: string } {
   const all = getStudents();
   const index = all.findIndex((item) => item.createdAt === recordKey);
   if (index < 0) return { success: false, error: "Student not found." };
   const student = all[index]!;
-  const existing = [...(student.monthlyFees || [])].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   const currentKey = monthKeyFromDate(new Date());
-  const nextKey = addMonths(existing.length ? existing[existing.length - 1]!.monthKey : currentKey, 1);
-  if (existing.some((fee) => fee.monthKey === nextKey)) return { success: false, error: "This month’s fee record already exists." };
-  const next = createMonthlyRecord(nextKey, student.monthlyFee);
-  const updated = normalizeStudent({ ...student, monthlyFees: [...existing, next], updatedAt: new Date().toISOString() });
+  const nextKey = addMonths(currentKey, 1);
+  const existing = [...(student.monthlyFees || [])];
+  const scheduled = existing.find((fee) => fee.monthKey === nextKey);
+  const next = scheduled || createMonthlyRecord(nextKey, student.monthlyFee);
+  if (!scheduled) {
+    const updated = normalizeStudent({ ...student, monthlyFees: [...existing, next], updatedAt: new Date().toISOString() });
+    all[index] = updated;
+    saveStudentsList(all);
+    return { success: true, student: updated, monthKey: nextKey };
+  }
+  return { success: true, student, monthKey: nextKey };
+}
+
+export function saveMonthlyFeeRecord(recordKey: string, monthKey: string, dueAmount: number, paidAmount: number): { success: boolean; error?: string; student?: Student } {
+  if (!/^\\d{4}-\\d{2}$/.test(monthKey)) return { success: false, error: "Choose a valid month." };
+  if (!Number.isFinite(dueAmount) || dueAmount < 0 || !Number.isFinite(paidAmount) || paidAmount < 0) return { success: false, error: "Fee amounts must be valid non-negative numbers." };
+  if (paidAmount > dueAmount) return { success: false, error: "Paid amount cannot exceed the monthly fee." };
+  const all = getStudents();
+  const index = all.findIndex((item) => item.createdAt === recordKey);
+  if (index < 0) return { success: false, error: "Student not found." };
+  const student = all[index]!;
+  const [year, month] = monthKey.split("-").map(Number);
+  const monthLabel = new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const current = student.monthlyFees || [];
+  const old = current.find((fee) => fee.monthKey === monthKey);
+  const next: MonthlyFeeRecord = {
+    id: old?.id || `MF-${monthKey}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+    monthKey,
+    monthLabel,
+    dueAmount,
+    paidAmount,
+    remainingAmount: Math.max(0, dueAmount - paidAmount),
+    status: computeStudentStatus(dueAmount, paidAmount),
+    paidAt: paidAmount >= dueAmount && dueAmount > 0 ? new Date().toISOString() : undefined,
+  };
+  const monthlyFees = [...current.filter((fee) => fee.monthKey !== monthKey), next];
+  const updated = normalizeStudent({ ...student, monthlyFees, updatedAt: new Date().toISOString() });
   all[index] = updated;
   saveStudentsList(all);
   return { success: true, student: updated };
