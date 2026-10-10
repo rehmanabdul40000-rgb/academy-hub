@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
+import { BankNameField } from "@/components/academy/bank-name-field";
 import { can } from "@/features/auth/permissions";
 import { Button } from "@/components/ui/button";
 import {
@@ -303,7 +304,7 @@ function SettingsPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-foreground">Bank Name</label>
-                <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Meezan Bank / Bank Alfalah" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+                <div className="mt-1"><BankNameField value={bankName} onChange={setBankName} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" /></div>
               </div>
               <div>
                 <label className="text-xs font-medium text-foreground">Bank Account Name / Title</label>
