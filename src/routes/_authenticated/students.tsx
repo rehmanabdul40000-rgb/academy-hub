@@ -472,6 +472,7 @@ function StudentsPage() {
         onEdit={(st) => setEditingStudent(st)}
         onQuickPayment={(st) => setPayingStudent(st)}
         onDelete={(st) => setDeletingStudent(st)}
+        onStudentUpdated={(updated) => { setViewingStudent(updated); setStudents(getStudents()); }}
       />
 
       <QuickPaymentModal
