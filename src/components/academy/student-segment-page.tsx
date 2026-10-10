@@ -92,7 +92,7 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
                     <td className="whitespace-nowrap px-5 py-4 font-medium text-foreground">
                       <div className="flex items-center gap-2.5">
                         <span className="grid size-8 place-items-center rounded-lg bg-cyan-500/10 text-xs font-bold text-cyan-400">{s.name.charAt(0).toUpperCase()}</span>
-                        <span className="font-semibold">{s.name}</span>
+                        <span className="flex items-center gap-2 font-semibold"><span aria-label={`Payment status: ${s.status}`} title={`Payment status: ${s.status}`} className={`inline-block size-2.5 shrink-0 rounded-full ${s.status === "Paid" ? "bg-emerald-400" : s.status === "Partial" ? "bg-blue-400" : "bg-amber-400"}`} />{s.name}</span>
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">{s.fatherName || <span className="text-muted-foreground/40">—</span>}</td>
