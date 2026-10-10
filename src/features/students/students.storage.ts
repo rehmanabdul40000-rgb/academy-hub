@@ -198,7 +198,7 @@ export function addNextMonthMonthlyRecord(recordKey: string): { success: boolean
 }
 
 export function saveMonthlyFeeRecord(recordKey: string, monthKey: string, dueAmount: number, paidAmount: number): { success: boolean; error?: string; student?: Student } {
-  if (!/^\\d{4}-\\d{2}$/.test(monthKey)) return { success: false, error: "Choose a valid month." };
+  if (!/^\d{4}-\d{2}$/.test(monthKey)) return { success: false, error: "Choose a valid month." };
   if (!Number.isFinite(dueAmount) || dueAmount < 0 || !Number.isFinite(paidAmount) || paidAmount < 0) return { success: false, error: "Fee amounts must be valid non-negative numbers." };
   if (paidAmount > dueAmount) return { success: false, error: "Paid amount cannot exceed the monthly fee." };
   const all = getStudents();
