@@ -137,13 +137,13 @@ function makeCopy(label, studentCopy){
  '</div></div>'+
  '<div class="bank"><div><b>Bank Name</b>'+esc(val("bankName")||"—")+'</div><div><b>Account Name / Title</b>'+esc(val("accountName")||"—")+'</div><div><b>Account Number</b>'+esc(val("accountNumber")||"—")+'</div></div>'+
  '<table class="fees"><thead><tr><th>Fee / Charges</th><th>Amount</th><th>Status / Detail</th></tr></thead><tbody>'+
- '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Admission") +'</td></tr>'+
- '<tr><td>Test / Session Charges</td><td>'+amountForCopy(num("testCharges"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
- '<tr><td>Total Fee</td><td>'+amountForCopy(totalFee,studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Total") +'</td></tr>'+
- '<tr><td>Monthly Fee'+(val("section")?" · "+esc(val("section")):"")+'</td><td>'+amountForCopy(num("monthlyFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Monthly") +'</td></tr>'+
+ '<tr><td>Admission Fee</td><td>'+amountForCopy(num("admissionFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? status.toUpperCase() : "Admission") +'</td></tr>'+
+ '<tr><td>Test / Session Charges</td><td>'+amountForCopy(num("testCharges"),studentCopy,status)+'</td><td>'+ (studentCopy ? status.toUpperCase() : "—") +'</td></tr>'+
+ '<tr><td>Total Fee</td><td>'+amountForCopy(totalFee,studentCopy,status)+'</td><td>'+ (studentCopy ? status.toUpperCase() : "Total") +'</td></tr>'+
+ '<tr><td>Monthly Fee'+(val("section")?" · "+esc(val("section")):"")+'</td><td>'+amountForCopy(num("monthlyFee"),studentCopy,status)+'</td><td>'+ (studentCopy ? status.toUpperCase() : "Monthly") +'</td></tr>'+
  '<tr><td>AC Dues</td><td>'+amountForCopy(num("acDues"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "—") +'</td></tr>'+
  '<tr class="received"><td>Amount Received</td><td>'+ (studentCopy ? (status==="Paid" ? "PAID" : status==="Partial" ? "PARTIAL" : "PENDING") : money(num("amountReceived"))) +'</td><td>'+esc(val("status"))+'</td></tr>'+
- '<tr><td>Previous Balance</td><td>'+amountForCopy(num("previousBalance"),studentCopy,status)+'</td><td>'+ (studentCopy ? "PAID" : "Before payment") +'</td></tr>'+
+ '<tr><td>Previous Balance</td><td>'+amountForCopy(num("previousBalance"),studentCopy,status)+'</td><td>'+ (studentCopy ? status.toUpperCase() : "Before payment") +'</td></tr>'+
  '<tr class="total"><td>Balance / Outstanding</td><td>'+ (studentCopy ? (status==="Paid" ? "PAID" : status==="Partial" ? "PARTIAL" : "PENDING") : money(balance)) +'</td><td>'+ (balance>0 ? "Outstanding" : "Cleared") +'</td></tr>'+
  '</tbody></table>'+
  '<div class="bottom"><div class="smallBox"><b>Last Date of Fee Submission</b><span>'+esc(val("lastDate")||"—")+'</span></div><div class="smallBox"><b>Late Fee</b><span>'+amountForCopy(num("lateFee"),studentCopy,status)+'</span></div><div class="smallBox"><b>Payment Date / Time</b><span>'+esc(val("date"))+' · '+esc(val("time"))+'</span></div></div>'+
