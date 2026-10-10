@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-ro
 import { ArrowLeft, CheckCircle2, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
+import { BankNameField } from "@/components/academy/bank-name-field";
 import { can } from "@/features/auth/permissions";
 import { isWorkspaceSectionEnabled } from "@/features/workspace/workspace.storage";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,7 @@ function AddStudentPage() {
               <div><label className="text-xs font-medium">Gender</label><select value={gender} onChange={(e) => setGender(e.target.value as "" | "Male" | "Female")} className={inputClass}><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div><label className="text-xs font-medium">Bank Name</label><input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Meezan Bank" className={inputClass} /></div>
+              <div><label className="text-xs font-medium">Bank Name / Wallet</label><div className="mt-1"><BankNameField value={bankName} onChange={setBankName} className={inputClass.replace("mt-1 ", "")} /></div></div>
               <div><label className="text-xs font-medium">Account Name / Title</label><input value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} placeholder="Account holder / title" className={inputClass} /></div>
               <div><label className="text-xs font-medium">Bank Account Number</label><input value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} placeholder="Account number" className={inputClass} /></div>
             </div>
