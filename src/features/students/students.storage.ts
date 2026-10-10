@@ -322,7 +322,16 @@ export function recordQuickPayment(id: string, additionalAmount: number): { succ
   const changedMonthKey = allocation.monthlyFees.find((item) => item.paidAmount > (student.monthlyFees?.find((old) => old.monthKey === item.monthKey)?.paidAmount || 0))?.monthKey;
   const feeType: PaymentRecord["feeType"] = allocation.admissionPaid > student.admissionPaid ? "Admission Fee" : "Monthly Fee";
   const existingPayments = [...(student.payments || [])];
-  const existingReceiptIndex = existingPayments.findIndex((item) => item.feeType === feeType && item.monthKey === changedMonthKey);
+  // Keep the original receipt for the initial admission + first-month bill while its balance is being cleared.
+  const receiptMonthKey = changedMonthKey || student.monthlyFees?.[0]?.monthKey;
+  const existingReceiptIndex = existingPayments.findIndex((item) =>
+    item.monthKey === receiptMonthKey &&
+    (item.feeType === feeType ||
+      (student.admissionFee > 0 &&
+        item.feeType === "Admission Fee" &&
+        item.newRemaining > 0 &&
+        student.totalFees === student.admissionFee + student.monthlyFee))
+  );
   const existingReceipt = existingReceiptIndex >= 0 ? existingPayments[existingReceiptIndex] : undefined;
   const payment: PaymentRecord = {
     id: existingReceipt?.id || `PAY-${paymentNow.getTime()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
