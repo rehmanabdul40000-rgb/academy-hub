@@ -18,7 +18,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import {
   DeleteStudentDialog,
@@ -72,6 +72,10 @@ function Dashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [settings, setSettings] = useState<AcademySettings>(getSettings());
   const [searchQuery, setSearchQuery] = useState("");
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const syncingScroll = useRef(false);
   const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");
   const [currentDateStr, setCurrentDateStr] = useState(() => {
     return new Date().toLocaleDateString("en-US", {
@@ -88,6 +92,36 @@ function Dashboard() {
       hour12: true,
     }),
   );
+
+  useEffect(() => {
+    const tableArea = tableScrollRef.current;
+    if (!tableArea) return;
+    const updateWidth = () => setTableScrollWidth(tableArea.scrollWidth);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(tableArea);
+    if (tableArea.firstElementChild) observer.observe(tableArea.firstElementChild);
+    window.addEventListener("resize", updateWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, [students.length, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    const handleTableWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const area = target.closest<HTMLElement>("#recent-students-section .academy-horizontal-scrollbar, #recent-students-section .academy-table-scroll-area");
+      if (!area || area.scrollWidth <= area.clientWidth) return;
+      event.preventDefault();
+      event.stopPropagation();
+      area.scrollLeft += event.deltaY;
+    };
+    window.addEventListener("wheel", handleTableWheel, { capture: true, passive: false });
+    return () => window.removeEventListener("wheel", handleTableWheel, true);
+  }, []);
 
   // Dialog states
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -523,7 +557,30 @@ function Dashboard() {
 
           {/* Student Table */}
           {filteredStudents.length > 0 ? (
-            <div className="responsive-data-table overflow-x-auto">
+            <>
+              <div
+                ref={topScrollRef}
+                aria-label="Horizontal scroll for recent student columns"
+                className="academy-horizontal-scrollbar sticky top-16 z-20 h-[14px] overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
+                onScroll={(event) => {
+                  if (syncingScroll.current) return;
+                  syncingScroll.current = true;
+                  if (tableScrollRef.current) tableScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+                  requestAnimationFrame(() => { syncingScroll.current = false; });
+                }}
+              >
+                <div style={{ width: tableScrollWidth, minWidth: "100%", height: 1 }} />
+              </div>
+              <div
+                ref={tableScrollRef}
+                className="responsive-data-table academy-table-scroll-area overflow-x-auto"
+                onScroll={(event) => {
+                  if (syncingScroll.current) return;
+                  syncingScroll.current = true;
+                  if (topScrollRef.current) topScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+                  requestAnimationFrame(() => { syncingScroll.current = false; });
+                }}
+              >
               <table id="recent-students-table" className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -683,7 +740,8 @@ function Dashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           ) : (
             <div className="p-12 text-center">
               <Users className="mx-auto size-10 text-muted-foreground/40" />
