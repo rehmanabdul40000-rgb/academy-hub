@@ -91,10 +91,11 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
             ref={topScrollRef}
             aria-label="Horizontal scroll for student columns"
             className="academy-horizontal-scrollbar sticky top-16 z-20 h-[14px] overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
-            onWheel={(event) => {
-              if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
-              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-                event.currentTarget.scrollLeft += event.deltaY;
+            onWheelCapture={(event) => {
+              if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+              const area = event.currentTarget;
+              if (area.scrollWidth > area.clientWidth) {
+                area.scrollLeft += event.deltaY;
                 event.preventDefault();
                 event.stopPropagation();
               }
@@ -111,10 +112,11 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           <div
             ref={tableScrollRef}
             className="responsive-data-table academy-table-scroll-area overflow-x-auto"
-            onWheel={(event) => {
-              if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
-              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-                event.currentTarget.scrollLeft += event.deltaY;
+            onWheelCapture={(event) => {
+              if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+              const area = event.currentTarget;
+              if (area.scrollWidth > area.clientWidth) {
+                area.scrollLeft += event.deltaY;
                 event.preventDefault();
                 event.stopPropagation();
               }
