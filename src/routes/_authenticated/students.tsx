@@ -62,6 +62,25 @@ function StudentsPage() {
   const syncingScroll = useRef(false);
 
   useEffect(() => {
+    const handleTableWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const area = target.closest<HTMLElement>(".academy-horizontal-scrollbar, .academy-table-scroll-area");
+      if (!area || area.scrollWidth <= area.clientWidth) return;
+
+      // Use a non-passive native capture listener so the browser cannot also
+      // scroll the document vertically while the pointer is over the table.
+      event.preventDefault();
+      event.stopPropagation();
+      area.scrollLeft += event.deltaY;
+    };
+
+    window.addEventListener("wheel", handleTableWheel, { capture: true, passive: false });
+    return () => window.removeEventListener("wheel", handleTableWheel, true);
+  }, []);
+
+  useEffect(() => {
     const tableArea = tableScrollRef.current;
     if (!tableArea) return;
     const updateWidth = () => setTableScrollWidth(tableArea.scrollWidth);
@@ -271,15 +290,6 @@ function StudentsPage() {
             ref={topScrollRef}
             aria-label="Horizontal scroll for student columns"
             className="academy-horizontal-scrollbar sticky top-16 z-20 h-[14px] overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
-            onWheelCapture={(event) => {
-              if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-              const area = event.currentTarget;
-              if (area.scrollWidth > area.clientWidth) {
-                area.scrollLeft += event.deltaY;
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
             onScroll={(event) => {
               if (syncingScroll.current) return;
               syncingScroll.current = true;
@@ -292,15 +302,6 @@ function StudentsPage() {
           <div
             ref={tableScrollRef}
             className="responsive-data-table academy-table-scroll-area overflow-x-auto"
-            onWheelCapture={(event) => {
-              if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-              const area = event.currentTarget;
-              if (area.scrollWidth > area.clientWidth) {
-                area.scrollLeft += event.deltaY;
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
             onScroll={(event) => {
               if (syncingScroll.current) return;
               syncingScroll.current = true;
