@@ -270,7 +270,15 @@ function StudentsPage() {
           <div
             ref={topScrollRef}
             aria-label="Horizontal scroll for student columns"
-            className="academy-horizontal-scrollbar sticky top-16 z-20 overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
+            className="academy-horizontal-scrollbar sticky top-16 z-20 h-[14px] overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
+            onWheel={(event) => {
+              if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                event.currentTarget.scrollLeft += event.deltaY;
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
             onScroll={(event) => {
               if (syncingScroll.current) return;
               syncingScroll.current = true;
@@ -278,15 +286,17 @@ function StudentsPage() {
               requestAnimationFrame(() => { syncingScroll.current = false; });
             }}
           >
-            <div style={{ width: tableScrollWidth, minWidth: "100%", height: 14 }} />
+            <div style={{ width: tableScrollWidth, minWidth: "100%", height: 1 }} />
           </div>
           <div
             ref={tableScrollRef}
             className="responsive-data-table academy-table-scroll-area overflow-x-auto"
             onWheel={(event) => {
-              if (Math.abs(event.deltaY) > Math.abs(event.deltaX) && event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
+              if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
                 event.currentTarget.scrollLeft += event.deltaY;
                 event.preventDefault();
+                event.stopPropagation();
               }
             }}
             onScroll={(event) => {
