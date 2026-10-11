@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Search, Users, Eye, ReceiptText, Edit, Trash2, FileSpreadsheet } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/academy/app-shell";
 import { Button } from "@/components/ui/button";
 import { ViewStudentModal, EditStudentModal, QuickPaymentModal, DeleteStudentDialog } from "@/components/academy/student-dialogs";
@@ -26,6 +26,10 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const syncingScroll = useRef(false);
 
   useEffect(() => {
     const refresh = () => setStudents(getStudents());
@@ -33,6 +37,21 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
     window.addEventListener("academy-students-updated", refresh);
     return () => window.removeEventListener("academy-students-updated", refresh);
   }, []);
+
+  useEffect(() => {
+    const tableArea = tableScrollRef.current;
+    if (!tableArea) return;
+    const updateWidth = () => setTableScrollWidth(tableArea.scrollWidth);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(tableArea);
+    if (tableArea.firstElementChild) observer.observe(tableArea.firstElementChild);
+    window.addEventListener("resize", updateWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, [segment, students.length, search]);
 
   const segmentStudents = useMemo(() => students.filter((student) => segment === "Male" || segment === "Female" ? student.gender === segment : student.shift === segment), [students, segment]);
   const filtered = useMemo(() => {
@@ -67,7 +86,36 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
           </div>
         </div>
         {filtered.length ? (
-          <div className="responsive-data-table overflow-x-auto">
+          <>
+          <div
+            ref={topScrollRef}
+            aria-label="Horizontal scroll for student columns"
+            className="academy-horizontal-scrollbar sticky top-16 z-20 overflow-x-auto overflow-y-hidden border-b border-border shadow-sm backdrop-blur"
+            onScroll={(event) => {
+              if (syncingScroll.current) return;
+              syncingScroll.current = true;
+              if (tableScrollRef.current) tableScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              requestAnimationFrame(() => { syncingScroll.current = false; });
+            }}
+          >
+            <div style={{ width: tableScrollWidth, minWidth: "100%", height: 14 }} />
+          </div>
+          <div
+            ref={tableScrollRef}
+            className="responsive-data-table academy-table-scroll-area overflow-x-auto"
+            onWheel={(event) => {
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX) && event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
+                event.currentTarget.scrollLeft += event.deltaY;
+                event.preventDefault();
+              }
+            }}
+            onScroll={(event) => {
+              if (syncingScroll.current) return;
+              syncingScroll.current = true;
+              if (topScrollRef.current) topScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              requestAnimationFrame(() => { syncingScroll.current = false; });
+            }}
+          >
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -135,6 +183,7 @@ export function StudentSegmentPage({ segment }: { segment: Segment }) {
               </tbody>
             </table>
           </div>
+          </>
         ) : <div className="p-12 text-center text-sm text-muted-foreground">{search ? "No matching records found." : meta.empty}</div>}
       </div>
 
