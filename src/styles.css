@@ -358,9 +358,15 @@
   overscroll-behavior-x: contain;
 }
 
-.academy-horizontal-scrollbar::-webkit-scrollbar { height: 14px; }
+.academy-horizontal-scrollbar::-webkit-scrollbar { height: 12px; }
 .academy-horizontal-scrollbar::-webkit-scrollbar-track { background: oklch(0.16 0.03 255 / 96%); border-radius: 9999px; }
 .academy-horizontal-scrollbar::-webkit-scrollbar-thumb { background: oklch(0.62 0.13 215); border: 3px solid oklch(0.16 0.03 255 / 96%); border-radius: 9999px; }
 .academy-horizontal-scrollbar::-webkit-scrollbar-thumb:hover { background: oklch(0.72 0.14 215); }
 .academy-table-scroll-area { scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
 .academy-table-scroll-area::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+
+/* Keep the document vertical scrollbar independent from table scrolling. */
+html {
+  overflow-y: scroll;
+}
